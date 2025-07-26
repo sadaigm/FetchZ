@@ -16,7 +16,7 @@ export default defineConfig({
         theme_color: "#ffffff",
         icons: [
           {
-            src: "/fetchz_512x512.png",
+            src: "/FetchZ/fetchz_512x512.png",
             sizes: "512x512",
             type: "image/png",
           },
