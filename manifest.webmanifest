@@ -1,0 +1,1 @@
+{"name":"FetchZ","short_name":"FetchZ","description":"A user-friendly tool for managing API requests locally","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","lang":"en","scope":"/","icons":[{"src":"/fetchz_512x512.png","sizes":"512x512","type":"image/png"}]}
