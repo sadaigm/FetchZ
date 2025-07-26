@@ -1,12 +1,16 @@
 import { openDB, type IDBPDatabase } from 'idb';
+import type { Collection, WebRsRequest } from '../types/request.types';
 
-interface Collection {
-  id: number;
-  name: string;
-}
+const mapToCollectionType = (rawCollection: any): Collection => {
+  return {
+    id: rawCollection.id,
+    name: rawCollection.name,
+    requests: rawCollection.requests || [],
+  };
+};
 
 const DB_NAME = 'WebRS';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Updated to match the current database version
 const STORE_NAME = 'collections';
 
 let dbPromise: Promise<IDBPDatabase>;
@@ -30,7 +34,7 @@ export const addCollection = async (name: string): Promise<IDBValidKey> => {
   return id;
 };
 
-export const renameCollection = async (id: number, newName: string): Promise<void> => {
+export const renameCollection = async (id: string, newName: string): Promise<void> => {
   const db = await initDB();
   const collection = await db.get(STORE_NAME, id);
   if (collection) {
@@ -41,12 +45,55 @@ export const renameCollection = async (id: number, newName: string): Promise<voi
   }
 };
 
-export const deleteCollection = async (id: number): Promise<void> => {
+export const deleteCollection = async (id: string): Promise<void> => {
   const db = await initDB();
   await db.delete(STORE_NAME, id);
 };
 
 export const getCollections = async (): Promise<Collection[]> => {
   const db = await initDB();
-  return await db.getAll(STORE_NAME);
+  const rawCollections = await db.getAll(STORE_NAME);
+  return rawCollections.map(mapToCollectionType);
+};
+
+export const addRequestToCollection = async (collectionId: string, request: WebRsRequest): Promise<void> => {
+  const db = await initDB();
+  const collection = await db.get(STORE_NAME, collectionId);
+  if (collection) {
+    collection.requests = [...(collection.requests || []), request];
+    await db.put(STORE_NAME, collection);
+  } else {
+    throw new Error('Collection not found');
+  }
+};
+
+export const modifyRequestInCollection = async (
+  collectionId: string,
+  requestId: string,
+  updatedRequest: WebRsRequest
+): Promise<void> => {
+  const db = await initDB();
+  const collection = await db.get(STORE_NAME, collectionId);
+  if (collection) {
+    collection.requests = collection.requests.map((req: WebRsRequest) =>
+      req.id === requestId ? updatedRequest : req
+    );
+    await db.put(STORE_NAME, collection);
+  } else {
+    throw new Error('Collection not found');
+  }
+};
+
+export const removeRequestFromCollection = async (
+  collectionId: string,
+  requestId: string
+): Promise<void> => {
+  const db = await initDB();
+  const collection = await db.get(STORE_NAME, collectionId);
+  if (collection) {
+    collection.requests = collection.requests.filter((req: WebRsRequest) => req.id !== requestId);
+    await db.put(STORE_NAME, collection);
+  } else {
+    throw new Error('Collection not found');
+  }
 };

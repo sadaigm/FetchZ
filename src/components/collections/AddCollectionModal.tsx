@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Input } from 'antd';
-import { addCollection } from '../../services/collectionStorage';
+import { useCollectionContext } from '../../context/CollectionProvider';
 
 interface AddCollectionModalProps {
   isOpen: boolean;
@@ -9,17 +9,14 @@ interface AddCollectionModalProps {
 
 const AddCollectionModal: React.FC<AddCollectionModalProps> = ({ isOpen, onClose }) => {
   const [collectionName, setCollectionName] = useState('');
+  const { addNewCollection } = useCollectionContext();
 
   const handleCreateCollection = async () => {
     try {
-      await addCollection(collectionName);
+      await addNewCollection(collectionName);
       console.log('Collection Created:', collectionName);
       setCollectionName('');
       onClose();
-      // Trigger refresh of collections
-      if (typeof window !== 'undefined' && window.dispatchEvent) {
-        window.dispatchEvent(new Event('refreshCollections'));
-      }
     } catch (error) {
       console.error('Failed to create collection:', error);
     }

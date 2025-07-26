@@ -1,0 +1,11 @@
+.sidebar-tabs-vertical {
+  height: 100%;
+}
+
+.tab-content {
+  display: block;
+}
+
+.tab-content.hidden {
+  display: none;
+}

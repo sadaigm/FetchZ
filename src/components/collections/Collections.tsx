@@ -1,18 +1,29 @@
-import { Button, Tree, Dropdown, Menu, Modal, Input } from 'antd';
-import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Tree, Dropdown, Menu, Modal, Input, Select } from 'antd';
+import { FileTwoTone, FolderOutlined, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import AddCollectionModal from './AddCollectionModal';
+import ImportCurlButton from './ImportCurlButton';
 import { fetchAndFormatCollections, renameCollectionAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
 import { useRequestContext } from '../../context/RequestProvider';
+import { useCollectionContext } from '../../context/CollectionProvider';
 import type { WebRsRequest } from '../../types/request.types';
+import { parseCurlScript } from '../../utils/curl-parser';
+
+
+const { DirectoryTree } = Tree;
+const { Search } = Input;
+
 
 const Collections: React.FC = () => {
-  const { addRequest, setSelectedRequestId } = useRequestContext();
+  const { addRequest, setSelectedRequestId, openedRequests } = useRequestContext();
+  const { collections } = useCollectionContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [treeData, setTreeData] = useState<any[]>([]);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
-  const [renameCollectionId, setRenameCollectionId] = useState<number | null>(null);
+  const [renameCollectionId, setRenameCollectionId] = useState<string | null>(null);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMethod, setFilterMethod] = useState<string | null>(null);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
@@ -30,7 +41,7 @@ const Collections: React.FC = () => {
     }
   };
 
-  const handleMenuClick = async (key: string, collectionId: number) => {
+  const handleMenuClick = async (key: string, collectionId: string) => {
     switch (key) {
       case 'addRequest':
         const newRequest = prepareEmptyRequest(collectionId);
@@ -55,18 +66,33 @@ const Collections: React.FC = () => {
     }
   };
 
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilterMethod(value);
+  };
+
+  const handleRefreshCollections = () => {
+    const event = new Event('refreshCollections');
+    window.dispatchEvent(event);
+  };
+
   useEffect(() => {
     const fetchCollections = async () => {
-      const formattedData = await fetchAndFormatCollections();
-      const updatedData = formattedData.map((collection) => ({
-        ...collection,
+      const updatedData = collections.map((collection) => ({
+        key: `${collection.id}`,
         title: (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{collection.title}</span>
+          <span style={{ display: 'flex', justifyContent: 'space-between', }}>
+            <span>
+              <FolderTwoTone />
+              <span style={{marginLeft: '5px'}}>{collection.name}</span>
+            </span>
             <Dropdown
               overlay={
                 <Menu
-                  onClick={({ key }) => handleMenuClick(key, collection.key)}
+                  onClick={(info) => handleMenuClick(info.key as string, collection.id)}
                   items={[
                     { key: 'addRequest', label: 'Add Request' },
                     { key: 'rename', label: 'Rename' },
@@ -78,8 +104,34 @@ const Collections: React.FC = () => {
             >
               <MoreOutlined style={{ cursor: 'pointer' }} />
             </Dropdown>
-          </div>
+          </span>
         ),
+        children: collection.requests
+          .filter((request) =>
+            (!searchTerm || request.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            (!filterMethod || request.method === filterMethod)
+          )
+          .map((request) => ({
+            key: `${request.id}`,
+            title: (
+              <span
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
+                  if (isAlreadyOpened) {
+                    setSelectedRequestId && setSelectedRequestId(request.id);
+                  } else {
+                    addRequest(request);
+                    setSelectedRequestId && setSelectedRequestId(request.id);
+                  }
+                }}
+              >
+                <FileTwoTone />
+                <span style={{marginLeft: '5px'}}>{request.name}</span>
+              </span>
+            ),
+            isLeaf: true,
+          })),
       }));
       setTreeData(updatedData);
     };
@@ -92,20 +144,42 @@ const Collections: React.FC = () => {
     return () => {
       window.removeEventListener('refreshCollections', handleRefresh);
     };
-  }, []);
+  }, [collections, searchTerm, filterMethod]);
 
   return (
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h3 style={{ fontWeight: 'bold', textAlign: 'center', margin: 0 }}>Collections</h3>
-        <Button type="primary" onClick={handleOpenModal}
-        icon={<PlusOutlined />}
-        ></Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="primary" onClick={handleOpenModal} icon={<PlusOutlined />} />
+          <Button type="default" onClick={handleRefreshCollections} icon={<ReloadOutlined />} />
+          <ImportCurlButton />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+        <Search
+          placeholder="Search requests by name"
+          onSearch={handleSearch}
+          style={{ width: '70%' }}
+          allowClear
+        />
+        <Select
+          placeholder="Filter by method"
+          onChange={handleFilterChange}
+          allowClear
+          style={{ width: '30%' }}
+        >
+          <Select.Option value="GET">GET</Select.Option>
+          <Select.Option value="POST">POST</Select.Option>
+          <Select.Option value="PUT">PUT</Select.Option>
+          <Select.Option value="DELETE">DELETE</Select.Option>
+        </Select>
+        <Button type="default" onClick={handleRefreshCollections} icon={<ReloadOutlined />} />
       </div>
       <Tree
         showLine={{ showLeafIcon: false }}
-        defaultExpandedKeys={['0-0-0']}
-        treeData={treeData}
+        defaultExpandedKeys={treeData.length > 0 ? [`${treeData[0].key}`]:[]}
+        treeData={treeData}        
         blockNode
       />
       <AddCollectionModal isOpen={isModalOpen} onClose={handleCloseModal} />

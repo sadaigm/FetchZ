@@ -1,6 +1,6 @@
 import React from 'react';
 import { List, Button, Typography, Avatar, Tooltip } from 'antd';
-import { mockRequests } from '../mock.data';
+import { useRequestHistoryContext } from '../context/RequestHistoryProvider';
 import type { WebRsRequest } from '../types/request.types';
 
 const { Text } = Typography;
@@ -28,18 +28,20 @@ const getAvatarText = (method: string) => {
 };
 
 const RequestHistory: React.FC<{ onSelectRequest: (request: WebRsRequest) => void }> = ({ onSelectRequest }) => {
+  const { requestHistory } = useRequestHistoryContext(); // Fetch request history from the provider
+
   return (
     <List
-      dataSource={mockRequests}
-      renderItem={(request) => (
+      dataSource={requestHistory} // Use requestHistory instead of mockRequests
+      renderItem={(history) => (
         <List.Item style={{ padding: '8px 0' }}>
           <List.Item.Meta
             avatar={
-              <Tooltip title={request.method}>
+              <Tooltip title={history.request.method}>
                 <Avatar
-                  style={getAvatarStyle(request.method)}
+                  style={getAvatarStyle(history.request.method)}
                 >
-                  {getAvatarText(request.method)}
+                  {getAvatarText(history.request.method)}
                 </Avatar>
               </Tooltip>
             }
@@ -47,10 +49,10 @@ const RequestHistory: React.FC<{ onSelectRequest: (request: WebRsRequest) => voi
               <Button
                 type="text"
                 block
-                onClick={() => onSelectRequest(request)}
+                onClick={() => onSelectRequest(history.request)}
                 style={{ textAlign: 'left', padding: '0' }}
               >
-                <Text ellipsis>{request.url}</Text>
+                <Text ellipsis>{history.request.url}</Text>
               </Button>
             }
           />

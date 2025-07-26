@@ -19,7 +19,7 @@ export const fetchAndFormatCollections = async (): Promise<any[]> => {
  * @param {number} collectionId - The ID of the collection to rename.
  * @param {string} newName - The new name for the collection.
  */
-export const renameCollectionAndRefresh = async (collectionId: number, newName: string): Promise<void> => {
+export const renameCollectionAndRefresh = async (collectionId: string, newName: string): Promise<void> => {
   await renameCollection(collectionId, newName);
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('refreshCollections'));
@@ -30,7 +30,7 @@ export const renameCollectionAndRefresh = async (collectionId: number, newName: 
  * Deletes a collection and triggers a refresh event.
  * @param {number} collectionId - The ID of the collection to delete.
  */
-export const deleteCollectionAndRefresh = async (collectionId: number): Promise<void> => {
+export const deleteCollectionAndRefresh = async (collectionId: string): Promise<void> => {
   await deleteCollection(collectionId);
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('refreshCollections'));
@@ -42,7 +42,7 @@ export const deleteCollectionAndRefresh = async (collectionId: number): Promise<
  * @param {number} collectionId - The ID of the collection the request belongs to.
  * @returns {WebRsRequest} A new empty request object.
  */
-export const prepareEmptyRequest = (collectionId: number): WebRsRequest => {
+export const prepareEmptyRequest = (collectionId: string): WebRsRequest => {
   return {
     id: `${collectionId}-${Date.now()}`,
     name: `Request from Collection ${collectionId}`,
