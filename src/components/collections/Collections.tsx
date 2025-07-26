@@ -1,16 +1,13 @@
 import { Button, Tree, Dropdown, Menu, Modal, Input, Select } from 'antd';
-import { FileTwoTone, FolderOutlined, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { FileTwoTone, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import AddCollectionModal from './AddCollectionModal';
 import ImportCurlButton from './ImportCurlButton';
-import { fetchAndFormatCollections, renameCollectionAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
+import { renameCollectionAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
 import { useRequestContext } from '../../context/RequestProvider';
 import { useCollectionContext } from '../../context/CollectionProvider';
-import type { WebRsRequest } from '../../types/request.types';
-import { parseCurlScript } from '../../utils/curl-parser';
 
 
-const { DirectoryTree } = Tree;
 const { Search } = Input;
 
 

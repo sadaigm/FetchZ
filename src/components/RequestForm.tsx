@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Form, Input, Select, Button, Space, Modal, Tabs, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { type WebRsRequest } from '../types/request.types';
-import type { Collection } from '../types/request.types';
 import SaveToCollectionModal from './collections/SaveToCollectionModal';
 import { useCollectionContext } from '../context/CollectionProvider';
 import { useRequestContext } from '../context/RequestProvider';

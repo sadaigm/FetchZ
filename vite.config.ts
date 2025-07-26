@@ -9,23 +9,21 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'web-rs',
-        short_name: 'web-rs',
-        description: 'A Postman-clone Progressive Web App',
+        name: 'FetchZ',
+        short_name: 'FetchZ',
+        description: 'A user-friendly tool for managing API requests locally',
         theme_color: '#ffffff',
         icons: [
           {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/icon-512x512.png',
+            src: '/fetchz_512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
         ],
       },
+      devOptions: {
+        enabled: true,
+      }
     }),
   ],
 })

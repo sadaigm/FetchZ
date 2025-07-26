@@ -2,3 +2,7 @@ node_modules/
 web-rs.md
 t1
 task.md
+dist/
+dev-dist/
+.vscode/
+tsconfig.node.tsbuildinfo

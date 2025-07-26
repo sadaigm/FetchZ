@@ -15,7 +15,6 @@ const SaveToCollectionModal: React.FC<SaveToCollectionModalProps> = ({
   visible,
   onClose,
   onSave,
-  request,
   collectionId,
 }) => {
   const { collections } = useCollectionContext();

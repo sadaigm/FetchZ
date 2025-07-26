@@ -23,33 +23,33 @@ const ImportCurlButton: React.FC = () => {
     }
   };
 
-  const curl_sample = `
-  curl 'http://192.168.2.126:8080/api/application' \
-  -H 'Accept: */*' \
-  -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8,ta;q=0.7' \
-  -H 'Cache-Control: max-age=0' \
-  -H 'Connection: keep-alive' \
-  -H 'Content-Type: application/json' \
-  -H 'GMHeader: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJobXNjdXN0MSIsImF1ZCI6IndlYiIsImV4cCI6MTc1NDAwMjg3MiwiaWF0IjoxNzUzMzk4MDcyfQ.yfs7vIxYalXtRhNsbVHajCP5dAlTOuBJP_BqVyXfwUD4cMRBvFTXlbJfJ6aZmGMT45znU1dU2QIOUxQ52VLyXg' \
-  -H 'Origin: http://localhost:5173' \
-  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36' \
-  --insecure
-  `;
+  // const curl_sample = `
+  // curl 'http://192.168.2.126:8080/api/application' \
+  // -H 'Accept: */*' \
+  // -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8,ta;q=0.7' \
+  // -H 'Cache-Control: max-age=0' \
+  // -H 'Connection: keep-alive' \
+  // -H 'Content-Type: application/json' \
+  // -H 'GMHeader: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJobXNjdXN0MSIsImF1ZCI6IndlYiIsImV4cCI6MTc1NDAwMjg3MiwiaWF0IjoxNzUzMzk4MDcyfQ.yfs7vIxYalXtRhNsbVHajCP5dAlTOuBJP_BqVyXfwUD4cMRBvFTXlbJfJ6aZmGMT45znU1dU2QIOUxQ52VLyXg' \
+  // -H 'Origin: http://localhost:5173' \
+  // -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36' \
+  // --insecure
+  // `;
 
-  const POST_SAMPLE = `
-  curl 'http://192.168.2.126:8080/auth' \
-  -H 'Accept: */*' \
-  -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8,ta;q=0.7' \
-  -H 'Cache-Control: max-age=0' \
-  -H 'Connection: keep-alive' \
-  -H 'Content-Type: application/json' \
-  -H 'Origin: http://localhost:5173' \
-  -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36' \
-  --data-raw '{"username":"hmscust1","password":"hmscust1","customertype":"customer"}' \
-  --insecure
-  `;
-   const postCurl = parseCurlScript(POST_SAMPLE);
-    console.log('Parsed POST cURL Script:', postCurl);
+  // const POST_SAMPLE = `
+  // curl 'http://192.168.2.126:8080/auth' \
+  // -H 'Accept: */*' \
+  // -H 'Accept-Language: en-GB,en-US;q=0.9,en;q=0.8,ta;q=0.7' \
+  // -H 'Cache-Control: max-age=0' \
+  // -H 'Connection: keep-alive' \
+  // -H 'Content-Type: application/json' \
+  // -H 'Origin: http://localhost:5173' \
+  // -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36' \
+  // --data-raw '{"username":"hmscust1","password":"hmscust1","customertype":"customer"}' \
+  // --insecure
+  // `;
+  //  const postCurl = parseCurlScript(POST_SAMPLE);
+  //   console.log('Parsed POST cURL Script:', postCurl);
 //   const parsedCurl = parseCurlScript(curl_sample);
 //   console.log('Parsed cURL Script:', parsedCurl);
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { allExpanded, JsonView, darkStyles, defaultStyles } from 'react-json-view-lite';
-import { defaultResponseJsonStyle } from '../const';
+import { allExpanded, JsonView, defaultStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { Card, Switch } from 'antd';
 

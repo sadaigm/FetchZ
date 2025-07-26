@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Tabs, Typography } from "antd";
+import { Layout, Tabs } from "antd";
 import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons";
 import RequestHistory from "./RequestHistory";
 import Collections from "./collections/Collections";
@@ -8,10 +8,9 @@ import { useRequestContext } from "../context/RequestProvider";
 import "./Sidebar.css";
 
 const { Sider } = Layout;
-const { Text } = Typography;
 
 const Sidebar: React.FC<{}> = ({}) => {
-  const { openedRequests, addRequest, setSelectedRequestId } =
+  const { addRequest, setSelectedRequestId } =
     useRequestContext();
   const [collapsed, setCollapsed] = React.useState(false);
 
@@ -35,16 +34,16 @@ const Sidebar: React.FC<{}> = ({}) => {
         )
       }
       style={{
-        padding: "8px",
+        // padding: "8px",
+        marginTop: "20px",
         overflow: "auto",
-        borderRight: "1px solid #f0f0f0",
+        borderRight: "1px solid #f0f0f0",        
       }}
     >
       <Tabs
         className={`sidebar-tabs-vertical ${collapsed ? "collapsed" : ""}`}
         defaultActiveKey="1"
         tabPosition="left"
-        style={{ height: "100%" }}
         items={[
           {
             key: "1",
