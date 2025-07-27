@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "FetchZ - API Testing Tool",
+  "version": "1.0.0",
+  "description": "Local-first API testing tool with collections, request history, tabbed interface, and folder organization. No cloud login required.",
+  "action": {
+    "default_title": "Open FetchZ"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "16": "fetchz_512x512.png",
+    "32": "fetchz_512x512.png",
+    "48": "fetchz_512x512.png",
+    "128": "fetchz_512x512.png"
+  }
+}
