@@ -4,5 +4,6 @@ t1
 task.md
 dist/
 dev-dist/
+dist-extension/
 .vscode/
 tsconfig.node.tsbuildinfo
