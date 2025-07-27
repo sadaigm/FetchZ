@@ -4,10 +4,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "public/electron.cjs",
   "scripts": {
     "dev": "vite",
+    "dev-web": "vite",
     "build": "tsc -b && vite build",
     "build-chrome-extension": "tsc -b && vite build --config vite.chrome-extension.config.ts",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"ELECTRON_DEV=true npm run dev\" \"sleep 3 && NODE_ENV=development electron .\"",
+    "build-electron": "ELECTRON_BUILD=true npm run build && electron-builder",
+    "dist": "ELECTRON_BUILD=true npm run build && electron-builder --publish=never",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -44,6 +50,10 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
@@ -51,6 +61,28 @@
     "tailwindcss": "^3.4.10",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
-    "vite-plugin-static-copy": "^0.17.1"
+    "vite-plugin-static-copy": "^0.17.1",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.fetchz.app",
+    "productName": "FetchZ",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "public/electron.cjs",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

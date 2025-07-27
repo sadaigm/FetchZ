@@ -5,5 +5,6 @@ task.md
 dist/
 dev-dist/
 dist-extension/
+dist-electron/
 .vscode/
 tsconfig.node.tsbuildinfo
