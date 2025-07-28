@@ -68,21 +68,35 @@
     "appId": "com.fetchz.app",
     "productName": "FetchZ",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "public/electron.cjs",
+      "public/fetchz_512x512.png",
       "node_modules/**/*"
     ],
+    "icon": "build/icons/icon.png",
     "mac": {
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icons/icon.png"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icons/icon.png"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "build/icons/icon.png",
+      "category": "Development",
+      "desktop": {
+        "Name": "FetchZ",
+        "Comment": "A user-friendly tool for managing API requests locally",
+        "Icon": "fetchz",
+        "Type": "Application",
+        "Categories": "Development;"
+      }
     }
   }
 }
