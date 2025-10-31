@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { addRequestHistory as addHistory, getAllRequestHistory } from '../services/requestHistoryStorage';
+import { addRequestHistory as addHistory, getAllRequestHistory } from '../services/database';
 import type { RequestHistory } from '../types/request.types';
 
 interface RequestHistoryContextProps {

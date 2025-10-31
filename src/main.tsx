@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { CollectionProvider } from './context/CollectionProvider';
-import { initDB } from './services/sharedDB';
+import { initDB } from './services/database';
 
 // Initialize the database during application startup
 initDB().catch((error) => {

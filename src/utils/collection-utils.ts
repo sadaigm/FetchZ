@@ -1,4 +1,4 @@
-import { getCollections, deleteCollection, renameCollection } from '../services/collectionStorage';
+import { getCollections, deleteCollection, renameCollection } from '../services/database';
 import type { WebRsRequest } from '../types/request.types';
 
 /**

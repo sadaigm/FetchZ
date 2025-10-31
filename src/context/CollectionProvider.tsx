@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getCollections, addRequestToCollection, modifyRequestInCollection, addCollection } from '../services/collectionStorage';
+import { getCollections, addRequestToCollection, modifyRequestInCollection, addCollection } from '../services/database';
 import type { Collection, WebRsRequest } from '../types/request.types';
 
 interface CollectionContextProps {

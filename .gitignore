@@ -8,3 +8,4 @@ dist-extension/
 dist-electron/
 .vscode/
 tsconfig.node.tsbuildinfo
+pending_task.md
