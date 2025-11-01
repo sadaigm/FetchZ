@@ -1,4 +1,5 @@
 import { getCollections, deleteCollection, renameCollection } from '../services/database';
+import { renameFolderInCollection } from '../services/database/stores/collections';
 import type { WebRsRequest } from '../types/request.types';
 
 /**
@@ -21,6 +22,19 @@ export const fetchAndFormatCollections = async (): Promise<any[]> => {
  */
 export const renameCollectionAndRefresh = async (collectionId: string, newName: string): Promise<void> => {
   await renameCollection(collectionId, newName);
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new Event('refreshCollections'));
+  }
+};
+
+/**
+ * Renames a folder in a collection and triggers a refresh event.
+ * @param {string} collectionId - The ID of the collection containing the folder.
+ * @param {string} folderId - The ID of the folder to rename.
+ * @param {string} newName - The new name for the folder.
+ */
+export const renameFolderAndRefresh = async (collectionId: string, folderId: string, newName: string): Promise<void> => {
+  await renameFolderInCollection(collectionId, folderId, newName);
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new Event('refreshCollections'));
   }

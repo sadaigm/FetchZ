@@ -5,7 +5,7 @@ import AddCollectionModal from './AddCollectionModal';
 import AddFolderModal from './AddFolderModal';
 import ImportCurlButton from './ImportCurlButton';
 import ImportPostmanCollection from '../ImportPostmanCollection';
-import { renameCollectionAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
+import { renameCollectionAndRefresh, renameFolderAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
 import { useRequestContext } from '../../context/RequestProvider';
 import { useCollectionContext } from '../../context/CollectionProvider';
 import type { CollectionFolder } from '../../types/request.types';
@@ -16,7 +16,7 @@ const { Search } = Input;
 
 const Collections: React.FC = () => {
   const { addRequest, setSelectedRequestId, openedRequests } = useRequestContext();
-  const { collections, addFolder, deleteFolder, addRequestToFolder, removeRequestFromFolder } = useCollectionContext();
+  const { collections, addFolder, deleteFolder, addRequestToFolder, removeRequestFromFolder, refreshCollections } = useCollectionContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -26,6 +26,8 @@ const Collections: React.FC = () => {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [folderCollectionId, setFolderCollectionId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
+  const [renameFolderId, setRenameFolderId] = useState<string | null>(null);
+  const [isRenamingFolder, setIsRenamingFolder] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMethod, setFilterMethod] = useState<string | null>(null);
 
@@ -44,12 +46,28 @@ const Collections: React.FC = () => {
   };
 
   const handleRename = async () => {
-    if (renameCollectionId !== null) {
+    if (renameCollectionId !== null && folderCollectionId !== null && isRenamingFolder) {
+      // Renaming a folder
+      try {
+        await renameFolderAndRefresh(folderCollectionId, renameCollectionId, newCollectionName);
+        console.log(`Renamed folder ${renameCollectionId} to ${newCollectionName} in collection ${folderCollectionId}`);
+        setIsRenameModalOpen(false);
+        setNewCollectionName('');
+        setRenameCollectionId(null);
+        setFolderCollectionId(null);
+        setRenameFolderId(null);
+        setIsRenamingFolder(false);
+      } catch (error) {
+        console.error(`Failed to rename folder ${renameCollectionId}:`, error);
+      }
+    } else if (renameCollectionId !== null) {
+      // Renaming a collection
       try {
         await renameCollectionAndRefresh(renameCollectionId, newCollectionName);
         console.log(`Renamed collection ${renameCollectionId} to ${newCollectionName}`);
         setIsRenameModalOpen(false);
         setNewCollectionName('');
+        setRenameCollectionId(null);
       } catch (error) {
         console.error(`Failed to rename collection ${renameCollectionId}:`, error);
       }
@@ -108,13 +126,16 @@ const Collections: React.FC = () => {
         break;
       case 'rename':
         setRenameCollectionId(folderId);
-        setNewFolderName('Rename Folder');
+        setFolderCollectionId(collectionId);
+        setRenameFolderId(folderId);
+        setIsRenamingFolder(true);
         setIsRenameModalOpen(true);
         break;
       case 'delete':
         try {
           await deleteFolder(collectionId, folderId);
           console.log(`Deleted folder ${folderId} from collection ${collectionId}`);
+          refreshCollections();
         } catch (error) {
           console.error(`Failed to delete folder:`, error);
         }
@@ -217,8 +238,15 @@ const Collections: React.FC = () => {
               .map((request) => ({
                 key: `${request.id}`,
                 title: (
-                  <span
-                    style={{ cursor: 'pointer' }}
+                  <div
+                    style={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
                     onClick={() => {
                       const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
                       if (isAlreadyOpened) {
@@ -230,8 +258,8 @@ const Collections: React.FC = () => {
                     }}
                   >
                     <FileFilled />
-                    <span style={{marginLeft: '5px'}}>{request.name}</span>
-                  </span>
+                    <span style={{marginLeft: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{request.name}</span>
+                  </div>
                 ),
                 isLeaf: true,
               }))
@@ -248,8 +276,15 @@ const Collections: React.FC = () => {
             .map((request) => ({
               key: `${request.id}`,
               title: (
-                <span
-                  style={{ cursor: 'pointer' }}
+                <div
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
                   onClick={() => {
                     const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
                     if (isAlreadyOpened) {
@@ -261,8 +296,8 @@ const Collections: React.FC = () => {
                   }}
                 >
                   <FileFilled />
-                  <span style={{marginLeft: '5px'}}>{request.name}</span>
-                </span>
+                  <span style={{marginLeft: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{request.name}</span>
+                </div>
               ),
               isLeaf: true,
             }));
@@ -336,16 +371,23 @@ const Collections: React.FC = () => {
         collectionId={folderCollectionId || ''}
       />
       <Modal
-        title={newCollectionName.includes('Rename') ? "Rename Collection" : "Rename Folder"}
+        title={isRenamingFolder ? "Rename Folder" : "Rename Collection"}
         open={isRenameModalOpen}
         onOk={handleRename}
-        onCancel={() => setIsRenameModalOpen(false)}
-        okText={newCollectionName.includes('Rename') ? "Rename" : "Rename"}
+        onCancel={() => {
+          setIsRenameModalOpen(false);
+          setRenameCollectionId(null);
+          setFolderCollectionId(null);
+          setRenameFolderId(null);
+          setIsRenamingFolder(false);
+          setNewCollectionName('');
+        }}
+        okText="Rename"
         cancelText="Cancel"
       >
         <Input
-          placeholder={newCollectionName.includes('Rename') ? "Enter new collection name" : "Enter new folder name"}
-          value={newCollectionName.replace('Rename Folder', '').replace('Rename Collection', '')}
+          placeholder={isRenamingFolder ? "Enter new folder name" : "Enter new collection name"}
+          value={newCollectionName}
           onChange={(e) => setNewCollectionName(e.target.value)}
         />
       </Modal>

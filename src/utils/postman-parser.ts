@@ -1,4 +1,4 @@
-import type { Collection, WebRsRequest } from '../types/request.types';
+import type { Collection, CollectionFolder, WebRsRequest } from '../types/request.types';
 
 export interface PostmanCollection {
   info: {
@@ -289,22 +289,34 @@ export function parsePostmanCollection(postmanCollection: PostmanCollection): Pa
  */
 export function convertToAppCollection(parsedCollection: ParsedCollection): Collection {
   const allRequests: WebRsRequest[] = [];
+  const folders: CollectionFolder[] = [];
   
-  // Set request names based on their folder context
+  // Process each folder and its requests
   parsedCollection.folders.forEach(folder => {
+    const folderRequests: WebRsRequest[] = [];
+    
     folder.requests.forEach((request, index) => {
       // Create a copy with a proper name
       const namedRequest: WebRsRequest = {
         ...request,
         name: request.name || `${folder.name} Request ${index + 1}`
       };
-      allRequests.push(namedRequest);
+      folderRequests.push(namedRequest);
+      // allRequests.push(namedRequest);
+    });
+    
+    // Create a folder with ID
+    folders.push({
+      id: generateId(),
+      name: folder.name,
+      requests: folderRequests
     });
   });
   
   return {
     id: generateId(),
     name: parsedCollection.name,
-    requests: allRequests
+    requests: allRequests,
+    folders
   };
 }

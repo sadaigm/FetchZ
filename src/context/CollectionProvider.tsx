@@ -75,16 +75,8 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const addFullCollection = async (collection: Collection): Promise<void> => {
-    await addCollectionToDB(collection.name);
-    // Get the newly created collection ID
-    const collections = await getCollections();
-    const newCollection = collections.find(c => c.name === collection.name);
-    if (newCollection) {
-      // Add all requests to the new collection
-      for (const request of collection.requests) {
-        await addRequestToCollection(newCollection.id, request);
-      }
-    }
+    // Add the full collection with folders and requests
+    await addCollectionToDB(collection);
     await fetchCollections(); // Refresh collections
   };
 

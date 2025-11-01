@@ -50,13 +50,20 @@ const RequestHistory: React.FC<{ onSelectRequest: (request: WebRsRequest) => voi
             }
             title={
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Button
-                  type="text"
+                <div
                   onClick={() => onSelectRequest(history.request)}
-                  style={{ textAlign: 'left', padding: '0', flex: 1 }}
+                  style={{
+                    textAlign: 'left',
+                    padding: '0',
+                    flex: 1,
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
                   <Text ellipsis>{history.request.url}</Text>
-                </Button>
+                </div>
                 <RelativeTimestamp history={history} />
               </div>
             }

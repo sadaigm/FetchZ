@@ -102,6 +102,26 @@ export const deleteFolderFromCollection = async (
   }
 };
 
+export const renameFolderInCollection = async (
+  collectionId: string,
+  folderId: string,
+  newName: string
+): Promise<void> => {
+  const db = await getDB();
+  const collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection && collection.folders) {
+    const folder = collection.folders.find((f: CollectionFolder) => f.id === folderId);
+    if (folder) {
+      folder.name = newName;
+      await db.put(STORE_NAMES.COLLECTIONS, collection);
+    } else {
+      throw new Error('Folder not found');
+    }
+  } else {
+    throw new Error('Collection or folder not found');
+  }
+};
+
 export const addRequestToFolder = async (
   collectionId: string,
   folderId: string,
