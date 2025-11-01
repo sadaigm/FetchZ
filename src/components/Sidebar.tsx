@@ -5,6 +5,8 @@ import RequestHistory from "./RequestHistory";
 import Collections from "./collections/Collections";
 import type { WebRsRequest } from "../types/request.types";
 import { useRequestContext } from "../context/RequestProvider";
+import { theme } from "antd";
+import { ThemeContext } from "../context/ThemeProvider";
 import "./Sidebar.css";
 
 const { Sider } = Layout;
@@ -13,6 +15,9 @@ const Sidebar: React.FC<{}> = ({}) => {
   const { addRequest, setSelectedRequestId } =
     useRequestContext();
   const [collapsed, setCollapsed] = React.useState(false);
+  const { token } = theme.useToken();
+  const themeContext = React.useContext(ThemeContext);
+  const themeMode = themeContext?.theme || 'light';
 
   const handleSelectRequest = (request: WebRsRequest) => {
     addRequest(request);
@@ -21,7 +26,7 @@ const Sidebar: React.FC<{}> = ({}) => {
 
   return (
     <Sider
-      theme="light"
+      theme={themeMode}
       width={collapsed ? 50 : "30%"}
       collapsible
       collapsed={collapsed}
@@ -37,7 +42,8 @@ const Sidebar: React.FC<{}> = ({}) => {
         // padding: "8px",
         marginTop: "20px",
         overflow: "auto",
-        borderRight: "1px solid #f0f0f0",        
+        borderRight: `1px solid ${token.colorBorder}`,
+        backgroundColor: token.colorBgContainer,
       }}
     >
       <Tabs
@@ -66,6 +72,7 @@ const Sidebar: React.FC<{}> = ({}) => {
                     marginBottom: "16px",
                     fontWeight: "bold",
                     textAlign: "center",
+                    color: token.colorText,
                   }}
                 >
                   Request History

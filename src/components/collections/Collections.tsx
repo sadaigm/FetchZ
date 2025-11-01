@@ -1,5 +1,5 @@
 import { Button, Tree, Dropdown, Menu, Modal, Input, Select } from 'antd';
-import { FileTwoTone, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { FileFilled, FileTwoTone, FolderFilled, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import AddCollectionModal from './AddCollectionModal';
 import ImportCurlButton from './ImportCurlButton';
@@ -83,7 +83,7 @@ const Collections: React.FC = () => {
         title: (
           <span style={{ display: 'flex', justifyContent: 'space-between', }}>
             <span>
-              <FolderTwoTone />
+              <FolderFilled />
               <span style={{marginLeft: '5px'}}>{collection.name}</span>
             </span>
             <Dropdown
@@ -123,7 +123,7 @@ const Collections: React.FC = () => {
                   }
                 }}
               >
-                <FileTwoTone />
+                <FileFilled />
                 <span style={{marginLeft: '5px'}}>{request.name}</span>
               </span>
             ),

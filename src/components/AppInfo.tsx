@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Modal } from 'antd';
+import { Modal, Avatar, Tooltip, theme } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 
 const AppInfo: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const { token } = theme.useToken();
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -19,10 +20,22 @@ const AppInfo: React.FC = () => {
 
   return (
     <>
-      <InfoCircleOutlined
-        style={{ fontSize: '24px', cursor: 'pointer' }}
-        onClick={showModal}
-      />
+      <Tooltip title="About FetchZ">
+        <Avatar
+          onClick={showModal}
+          style={{
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            border: `1px solid ${token.colorBorder}`,
+            color: token.colorText,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          size="small"
+          icon={<InfoCircleOutlined />}
+        />
+      </Tooltip>
       <Modal
         title="About FetchZ"
         open={isModalVisible}

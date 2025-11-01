@@ -2,17 +2,20 @@ import React from 'react';
 import { List, Button, Typography, Avatar, Tooltip } from 'antd';
 import { useRequestHistoryContext } from '../context/RequestHistoryProvider';
 import type { WebRsRequest } from '../types/request.types';
+import RelativeTimestamp from './RelativeTimestamp';
 
 const { Text } = Typography;
 
 const getAvatarStyle = (method: string) => {
   switch (method) {
     case 'POST':
-      return { backgroundColor: '#3f51b5', color: '#fff' }; // Green for POST
+      return { backgroundColor: '#5f88e2ff', color: '#fff' }; // Green for POST
     case 'PUT':
-      return { backgroundColor: '#ff9800', color: '#fff' }; // Orange for PUT
+      return { backgroundColor: '#dfa11bff', color: '#fff' }; // Orange for PUT
+    case 'DELETE' :
+      return { backgroundColor: '#d31913ff', color: '#fff' }; // Red for DELETE
     default:
-      return { backgroundColor: '#1890ff', color: '#fff' }; // Default Blue
+      return { backgroundColor: '#4ecf75ff', color: '#fff' }; // Default Blue
   }
 };
 
@@ -46,14 +49,16 @@ const RequestHistory: React.FC<{ onSelectRequest: (request: WebRsRequest) => voi
               </Tooltip>
             }
             title={
-              <Button
-                type="text"
-                block
-                onClick={() => onSelectRequest(history.request)}
-                style={{ textAlign: 'left', padding: '0' }}
-              >
-                <Text ellipsis>{history.request.url}</Text>
-              </Button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Button
+                  type="text"
+                  onClick={() => onSelectRequest(history.request)}
+                  style={{ textAlign: 'left', padding: '0', flex: 1 }}
+                >
+                  <Text ellipsis>{history.request.url}</Text>
+                </Button>
+                <RelativeTimestamp history={history} />
+              </div>
             }
           />
         </List.Item>

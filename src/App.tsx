@@ -1,15 +1,20 @@
-import { Layout } from "antd";
+import { Layout, Space } from "antd";
 import "./App.css";
 import { RequestProvider } from "./context/RequestProvider";
 import { RequestHistoryProvider } from "./context/RequestHistoryProvider";
+import { ThemeProvider } from "./context/ThemeProvider";
 import Sidebar from "./components/Sidebar";
 import AppLayoutPanel from "./components/AppLayoutPanel";
+import ThemeToggle from "./components/ThemeToggle";
 import fetchzLogo from "../public/fetchz-favicon.svg";
 import AppInfo from "./components/AppInfo";
+import { theme } from "antd";
 
 const { Content } = Layout;
 
 const App = () => {
+  const { token } = theme.useToken();
+
   return (
     <RequestProvider>
       <div
@@ -18,6 +23,8 @@ const App = () => {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "5px",
+          backgroundColor: token.colorBgContainer,
+          borderBottom: `1px solid ${token.colorBorder}`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
@@ -26,22 +33,29 @@ const App = () => {
             alt="FetchZ Logo"
             style={{ width: "40px", height: "40px", marginRight: "8px" }}
           />
-          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "bold" }}>
+          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "bold", color: token.colorText }}>
             FetchZ
           </h1>
         </div>
-        <AppInfo />
+        <Space direction="horizontal" style={{marginRight:"20px",}} size="middle" >
+          <ThemeToggle />
+          <AppInfo />
+        </Space>
       </div>
       <RequestHistoryProvider>
-        <Layout style={{ height: "calc( 100vh - 60px )" }}>
+        <Layout style={{ height: "calc( 100vh - 60px )",
+          background: token.colorBgContainer,
+         }}>
           <Sidebar />
-          <Layout style={{ padding: "16px" }}>
+          <Layout style={{ padding: "16px",
+            background: token.colorBgContainer,
+           }}>
             <Content
               style={{
-                background: "#fff",
+                background: token.colorBgContainer,
                 padding: "16px",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                borderRadius: token.borderRadius,
+                boxShadow: token.boxShadowSecondary,
               }}
             >
               <AppLayoutPanel />

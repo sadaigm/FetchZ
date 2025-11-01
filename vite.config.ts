@@ -22,7 +22,7 @@ export default defineConfig(() => {
           theme_color: "#ffffff",
           icons: [
             {
-              src: `${base}fetchz_512x512.png`,
+              src: "fetchz_512x512.png",
               sizes: "512x512",
               type: "image/png",
             },
@@ -33,5 +33,12 @@ export default defineConfig(() => {
         },
       }),
     ],
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 100,
+        ignored: ['**/dist/**',"**/dev-dist/**","**/dist-electron/**","**/dist-extension/**"],
+      },
+    },
   };
 });

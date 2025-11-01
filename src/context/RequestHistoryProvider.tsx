@@ -15,7 +15,11 @@ export const RequestHistoryProvider: React.FC<{ children: React.ReactNode }> = (
 
   const fetchRequestHistory = async () => {
     const history = await getAllRequestHistory();
-    setRequestHistory(history);
+    // Sort by timestamp in descending order (newest first)
+    const sortedHistory = history.sort((a, b) =>
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    setRequestHistory(sortedHistory);
   };
 
   const addRequestHistory = async (history: RequestHistory) => {
