@@ -13,6 +13,13 @@ export interface Collection {
   id: string;
   name: string;
   requests: WebRsRequest[];
+  folders?: CollectionFolder[];
+}
+
+export interface CollectionFolder {
+  id: string;
+  name: string;
+  requests: WebRsRequest[];
 }
 
 export interface RequestHistory {

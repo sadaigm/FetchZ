@@ -1,11 +1,14 @@
 import { Button, Tree, Dropdown, Menu, Modal, Input, Select } from 'antd';
-import { FileFilled, FileTwoTone, FolderFilled, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { FileFilled, FileTwoTone, FolderFilled, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined, ImportOutlined, DatabaseFilled } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import AddCollectionModal from './AddCollectionModal';
+import AddFolderModal from './AddFolderModal';
 import ImportCurlButton from './ImportCurlButton';
+import ImportPostmanCollection from '../ImportPostmanCollection';
 import { renameCollectionAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
 import { useRequestContext } from '../../context/RequestProvider';
 import { useCollectionContext } from '../../context/CollectionProvider';
+import type { CollectionFolder } from '../../types/request.types';
 
 
 const { Search } = Input;
@@ -13,17 +16,32 @@ const { Search } = Input;
 
 const Collections: React.FC = () => {
   const { addRequest, setSelectedRequestId, openedRequests } = useRequestContext();
-  const { collections } = useCollectionContext();
+  const { collections, addFolder, deleteFolder, addRequestToFolder, removeRequestFromFolder } = useCollectionContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [treeData, setTreeData] = useState<any[]>([]);
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [renameCollectionId, setRenameCollectionId] = useState<string | null>(null);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [folderCollectionId, setFolderCollectionId] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMethod, setFilterMethod] = useState<string | null>(null);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+  const handleOpenImportModal = () => setIsImportModalOpen(true);
+  const handleCloseImportModal = () => setIsImportModalOpen(false);
+  const handleOpenFolderModal = (collectionId: string) => {
+    setFolderCollectionId(collectionId);
+    setIsFolderModalOpen(true);
+  };
+  const handleCloseFolderModal = () => {
+    setIsFolderModalOpen(false);
+    setFolderCollectionId(null);
+    setNewFolderName('');
+  };
 
   const handleRename = async () => {
     if (renameCollectionId !== null) {
@@ -38,13 +56,30 @@ const Collections: React.FC = () => {
     }
   };
 
-  const handleMenuClick = async (key: string, collectionId: string) => {
+  const handleAddFolder = async (newfolderNameParam : string) => {
+    if (folderCollectionId !== null && newfolderNameParam.trim()) {
+      try {
+        await addFolder(folderCollectionId, newfolderNameParam);
+        console.log(`Added folder "${newfolderNameParam}" to collection ${folderCollectionId}`);
+        handleCloseFolderModal();
+      } catch (error) {
+        console.error(`Failed to add folder:`, error);
+      }
+    }
+  };
+
+  const handleMenuClick = async (key: string, collectionId: string, folderId?: string) => {
     switch (key) {
       case 'addRequest':
         const newRequest = prepareEmptyRequest(collectionId);
         addRequest(newRequest);
         setSelectedRequestId && setSelectedRequestId?.(newRequest.id);
         console.log(`Added request to collection ${collectionId}`);
+        break;
+      case 'addFolder':
+        // if (folderId) {
+          handleOpenFolderModal(collectionId);
+        // }
         break;
       case 'rename':
         setRenameCollectionId(collectionId);
@@ -56,6 +91,32 @@ const Collections: React.FC = () => {
           console.log(`Deleted collection ${collectionId}`);
         } catch (error) {
           console.error(`Failed to delete collection ${collectionId}:`, error);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleFolderMenuClick = async (key: string, collectionId: string, folderId: string) => {
+    switch (key) {
+      case 'addRequest':
+        const newRequest = prepareEmptyRequest(collectionId);
+        addRequest(newRequest);
+        setSelectedRequestId && setSelectedRequestId?.(newRequest.id);
+        console.log(`Added request to folder ${folderId} in collection ${collectionId}`);
+        break;
+      case 'rename':
+        setRenameCollectionId(folderId);
+        setNewFolderName('Rename Folder');
+        setIsRenameModalOpen(true);
+        break;
+      case 'delete':
+        try {
+          await deleteFolder(collectionId, folderId);
+          console.log(`Deleted folder ${folderId} from collection ${collectionId}`);
+        } catch (error) {
+          console.error(`Failed to delete folder:`, error);
         }
         break;
       default:
@@ -78,58 +139,139 @@ const Collections: React.FC = () => {
 
   useEffect(() => {
     const fetchCollections = async () => {
-      const updatedData = collections.map((collection) => ({
-        key: `${collection.id}`,
-        title: (
-          <span style={{ display: 'flex', justifyContent: 'space-between', }}>
-            <span>
-              <FolderFilled />
-              <span style={{marginLeft: '5px'}}>{collection.name}</span>
-            </span>
-            <Dropdown
-              overlay={
-                <Menu
-                  onClick={(info) => handleMenuClick(info.key as string, collection.id)}
-                  items={[
-                    { key: 'addRequest', label: 'Add Request' },
-                    { key: 'rename', label: 'Rename' },
-                    { key: 'delete', label: 'Delete' },
-                  ]}
-                />
-              }
-              trigger={['click']}
-            >
-              <MoreOutlined style={{ cursor: 'pointer' }} />
-            </Dropdown>
-          </span>
-        ),
-        children: collection.requests
-          .filter((request) =>
-            (!searchTerm || request.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-            (!filterMethod || request.method === filterMethod)
-          )
-          .map((request) => ({
-            key: `${request.id}`,
-            title: (
-              <span
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
-                  if (isAlreadyOpened) {
-                    setSelectedRequestId && setSelectedRequestId(request.id);
-                  } else {
-                    addRequest(request);
-                    setSelectedRequestId && setSelectedRequestId(request.id);
-                  }
-                }}
+      const updatedData = collections.map((collection) => {
+        const collectionItem: {
+          key: string;
+          title: JSX.Element;
+          children: Array<{
+            key: string;
+            title: JSX.Element;
+            isLeaf?: boolean;
+            children?: Array<{
+              key: string;
+              title: JSX.Element;
+              isLeaf?: boolean;
+            }>;
+          }>;
+        } = {
+          key: `${collection.id}`,
+          title: (
+            <span style={{ display: 'flex', justifyContent: 'space-between', }}>
+              <span>
+                <FolderFilled />
+                <span style={{marginLeft: '5px'}}>{collection.name}</span>
+              </span>
+              <Dropdown
+                overlay={
+                  <Menu
+                    onClick={(info) => handleMenuClick(info.key as string, collection.id)}
+                    items={[
+                      { key: 'addRequest', label: 'Add Request' },
+                      { key: 'addFolder', label: 'Add Folder' },
+                      { key: 'rename', label: 'Rename' },
+                      { key: 'delete', label: 'Delete' },
+                    ]}
+                  />
+                }
+                trigger={['click']}
               >
-                <FileFilled />
-                <span style={{marginLeft: '5px'}}>{request.name}</span>
+                <MoreOutlined style={{ cursor: 'pointer' }} />
+              </Dropdown>
+            </span>
+          ),
+          children: []
+        };
+
+        // Add folders as children
+        if (collection.folders && collection.folders.length > 0) {
+          collectionItem.children = collection.folders.map((folder: CollectionFolder) => ({
+            key: folder.id,
+            title: (
+              <span style={{ display: 'flex', justifyContent: 'space-between', }}>
+                <span>
+                  <FolderTwoTone />
+                  <span style={{marginLeft: '5px'}}>{folder.name}</span>
+                </span>
+                <Dropdown
+                  overlay={
+                    <Menu
+                      onClick={(info) => handleFolderMenuClick(info.key as string, collection.id, folder.id)}
+                      items={[
+                        { key: 'addRequest', label: 'Add Request' },
+                        { key: 'rename', label: 'Rename' },
+                        { key: 'delete', label: 'Delete' },
+                      ]}
+                    />
+                  }
+                  trigger={['click']}
+                >
+                  <MoreOutlined style={{ cursor: 'pointer' }} />
+                </Dropdown>
               </span>
             ),
-            isLeaf: true,
-          })),
-      }));
+            children: folder.requests
+              .filter((request) =>
+                (!searchTerm || request.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+                (!filterMethod || request.method === filterMethod)
+              )
+              .map((request) => ({
+                key: `${request.id}`,
+                title: (
+                  <span
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
+                      if (isAlreadyOpened) {
+                        setSelectedRequestId && setSelectedRequestId(request.id);
+                      } else {
+                        addRequest(request);
+                        setSelectedRequestId && setSelectedRequestId(request.id);
+                      }
+                    }}
+                  >
+                    <FileFilled />
+                    <span style={{marginLeft: '5px'}}>{request.name}</span>
+                  </span>
+                ),
+                isLeaf: true,
+              }))
+          }));
+        }
+
+        // Add direct requests (not in folders)
+        if (collection.requests && collection.requests.length > 0) {
+          const directRequests = collection.requests
+            .filter((request) =>
+              (!searchTerm || request.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+              (!filterMethod || request.method === filterMethod)
+            )
+            .map((request) => ({
+              key: `${request.id}`,
+              title: (
+                <span
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
+                    if (isAlreadyOpened) {
+                      setSelectedRequestId && setSelectedRequestId(request.id);
+                    } else {
+                      addRequest(request);
+                      setSelectedRequestId && setSelectedRequestId(request.id);
+                    }
+                  }}
+                >
+                  <FileFilled />
+                  <span style={{marginLeft: '5px'}}>{request.name}</span>
+                </span>
+              ),
+              isLeaf: true,
+            }));
+          
+          collectionItem.children = [...(collectionItem.children || []), ...directRequests];
+        }
+
+        return collectionItem;
+      });
       setTreeData(updatedData);
     };
 
@@ -150,6 +292,12 @@ const Collections: React.FC = () => {
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button type="primary" onClick={handleOpenModal} icon={<PlusOutlined />} />
           <Button type="default" onClick={handleRefreshCollections} icon={<ReloadOutlined />} />
+          <Button
+            type="default"
+            onClick={handleOpenImportModal}
+            icon={<DatabaseFilled />}
+            title="Import Collection"
+          />
           <ImportCurlButton />
         </div>
       </div>
@@ -180,17 +328,24 @@ const Collections: React.FC = () => {
         blockNode
       />
       <AddCollectionModal isOpen={isModalOpen} onClose={handleCloseModal} />
+      <ImportPostmanCollection visible={isImportModalOpen} onClose={handleCloseImportModal} />
+      <AddFolderModal
+        isOpen={isFolderModalOpen}
+        onClose={handleCloseFolderModal}
+        onAddFolder={handleAddFolder}
+        collectionId={folderCollectionId || ''}
+      />
       <Modal
-        title="Rename Collection"
+        title={newCollectionName.includes('Rename') ? "Rename Collection" : "Rename Folder"}
         open={isRenameModalOpen}
         onOk={handleRename}
         onCancel={() => setIsRenameModalOpen(false)}
-        okText="Rename"
+        okText={newCollectionName.includes('Rename') ? "Rename" : "Rename"}
         cancelText="Cancel"
       >
         <Input
-          placeholder="Enter new collection name"
-          value={newCollectionName}
+          placeholder={newCollectionName.includes('Rename') ? "Enter new collection name" : "Enter new folder name"}
+          value={newCollectionName.replace('Rename Folder', '').replace('Rename Collection', '')}
           onChange={(e) => setNewCollectionName(e.target.value)}
         />
       </Modal>
