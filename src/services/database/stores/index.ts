@@ -23,3 +23,16 @@ export {
   getAllRequestHistory,
   getRequestHistoryById,
 } from './requestHistory';
+
+// Re-export all environment operations
+export {
+  addEnvironment,
+  renameEnvironment,
+  deleteEnvironment,
+  getEnvironments,
+  getEnvironmentById,
+  addEnvironmentValue,
+  updateEnvironmentValue,
+  deleteEnvironmentValue,
+  updateEnvironment
+} from './environments';

@@ -11,7 +11,7 @@ interface NetworkPanelProps {
   request: WebRsRequest;
   index: number;
   tabs: WebRsRequest[];
-  setTabs: React.Dispatch<React.SetStateAction<WebRsRequest[]>>;
+  setTabs: (requests: WebRsRequest[]) => void;
   collectionId?: string;
 }
 

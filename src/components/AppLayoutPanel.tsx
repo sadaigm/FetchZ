@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Tabs } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import { useRequestContext } from "../context/RequestProvider";
+import type { OpenedWindowInstance } from "../context/RequestProvider";
 import NetworkPanel from "./NetworkPanel";
+import EnvironmentDetails from "./environments/EnvironmentDetails";
 import type { WebRsRequest } from "../types/request.types";
+import type { Environment } from "../types/environment.types";
 
 const { TabPane } = Tabs;
 
@@ -22,7 +25,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
   const [activeTabKey, setActiveTabKey] = useState<string>(
     requests[0]?.id?.toString() || ""
   );
-  const [tabs, setTabs] = useState(requests);
+  const [tabs, setTabs] = useState<OpenedWindowInstance[]>(requests);
 
   useEffect(() => {
     setTabs(requests);
@@ -54,7 +57,12 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
       body: "",
       description: "", // Initialize the new description field
     };
-    setTabs([...tabs, newRequest]);
+    const newWindow: OpenedWindowInstance = {
+      type: "WebRsRequest",
+      data: newRequest,
+      id: newRequest.id
+    };
+    setTabs([...tabs, newWindow]);
     addRequest(newRequest);
     setSelectedRequestId && setSelectedRequestId(newRequest.id.toString());
   };
@@ -79,23 +87,51 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
         if (action === "remove") handleRemoveTab(targetKey as string);
       }}
     >
-      {tabs.map((request, index) => (
-        <TabPane
-          tab={`${request.name || `Request ${index + 1}`}${
-            dirtyRequests.includes(request.id) ? " *" : ""
-          }`}
-          key={request.id?.toString() || `new-${index}`}
-          closable={tabs.length > 1}
-        >
-          <NetworkPanel
-            request={request}
-            index={index}
-            tabs={tabs}
-            setTabs={setTabs}
-            collectionId={requestCollections[request.id]?.id || undefined}
-          />
-        </TabPane>
-      ))}
+      {tabs.map((tab, index) => {
+        const isRequest = tab.type === "WebRsRequest";
+        const isEnvironment = tab.type === "Environment";
+        const tabData = tab.data;
+        
+        return (
+          <TabPane
+            tab={`${tabData.name || `${isRequest ? 'Request' : 'Environment'} ${index + 1}`}${
+              (isRequest || isEnvironment) && dirtyRequests.includes(tab.id) ? " *" : ""
+            }`}
+            key={tab.id?.toString() || `new-${index}`}
+            closable={tabs.length > 1}
+          >
+            {isRequest && (
+              <NetworkPanel
+                request={tabData as WebRsRequest}
+                index={index}
+                tabs={tabs.filter(t => t.type === "WebRsRequest").map(t => t.data as WebRsRequest)}
+                setTabs={(newTabs: WebRsRequest[]) => {
+                  // Convert WebRsRequest[] back to OpenedWindowInstance[]
+                  const updatedWindows: OpenedWindowInstance[] = tabs.map(window => {
+                    if (window.type === "WebRsRequest") {
+                      const matchingTab = newTabs.find(tab => tab.id === window.id);
+                      if (matchingTab) {
+                        return {
+                          type: "WebRsRequest" as const,
+                          data: matchingTab,
+                          id: window.id
+                        };
+                      }
+                      return window;
+                    }
+                    return window;
+                  });
+                  setTabs(updatedWindows);
+                }}
+                collectionId={requestCollections[tab.id]?.id || undefined}
+              />
+            )}
+            {isEnvironment && (
+              <EnvironmentDetails environment={tabData as Environment} />
+            )}
+          </TabPane>
+        );
+      })}
     </Tabs>
   );
 };

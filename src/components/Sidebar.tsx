@@ -3,6 +3,7 @@ import { Layout, Tabs } from "antd";
 import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons";
 import RequestHistory from "./RequestHistory";
 import Collections from "./collections/Collections";
+import Environments from "./environments/Environments";
 import type { WebRsRequest } from "../types/request.types";
 import { useRequestContext } from "../context/RequestProvider";
 import { theme } from "antd";
@@ -78,6 +79,15 @@ const Sidebar: React.FC<{}> = ({}) => {
                   Request History
                 </h3>
                 <RequestHistory onSelectRequest={handleSelectRequest} />
+              </div>
+            ),
+          },
+          {
+            key: "3",
+            label: <div style={{ writingMode: "vertical-rl" }}>Environments</div>,
+            children: (
+              <div className={`tab-content ${collapsed ? "hidden" : ""}`}>
+                <Environments />
               </div>
             ),
           },

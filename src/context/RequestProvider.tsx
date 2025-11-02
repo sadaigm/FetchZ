@@ -1,10 +1,18 @@
 import React, { createContext, useContext, useState } from 'react';
 import type { WebRsRequest, Collection } from '../types/request.types';
+import type { Environment } from '../types/environment.types';
 import { useCollectionContext } from './CollectionProvider';
 
+export interface OpenedWindowInstance {
+  type: "WebRsRequest" | "Environment";
+  data: WebRsRequest | Environment;
+  id: string; // for removal & adding
+}
+
 interface RequestContextProps {
-  openedRequests: WebRsRequest[];
+  openedRequests: OpenedWindowInstance[];
   addRequest: (request: WebRsRequest, collectionId?: string) => void;
+  addEnvironment: (environment: Environment) => void;
   removeRequest: (requestId: string) => void;
   selectedRequestId?: string;
   setSelectedRequestId?: (requestId: string) => void;
@@ -16,7 +24,7 @@ interface RequestContextProps {
 const RequestContext = createContext<RequestContextProps | undefined>(undefined);
 
 export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [openedRequests, setOpenedRequests] = useState<WebRsRequest[]>([]);
+  const [openedRequests, setOpenedRequests] = useState<OpenedWindowInstance[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>(undefined);
   const [requestCollections, setRequestCollections] = useState<Record<string, Collection | undefined>>({});
   const [ dirtyRequests, setDirtyRequests ] = useState<Array<string>>([] as Array<string>);
@@ -25,7 +33,12 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addRequest = (request: WebRsRequest, collectionId?: string) => {
     setOpenedRequests((prevRequests) => {
       if (!prevRequests.some((r) => r.id === request.id)) {
-        return [...prevRequests, request];
+        const newWindow: OpenedWindowInstance = {
+          type: "WebRsRequest",
+          data: request,
+          id: request.id
+        };
+        return [...prevRequests, newWindow];
       }
       return prevRequests;
     });
@@ -49,6 +62,22 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const addEnvironment = (environment: Environment) => {
+    setOpenedRequests((prevRequests) => {
+      if (!prevRequests.some((r) => r.id === environment.id)) {
+        const newWindow: OpenedWindowInstance = {
+          type: "Environment",
+          data: environment,
+          id: environment.id
+        };
+        return [...prevRequests, newWindow];
+      }
+      return prevRequests;
+    });
+    setSelectedRequestId && setSelectedRequestId(environment.id);
+  };
+
+
   const removeRequest = (requestId: string) => {
     setOpenedRequests((prevRequests) => prevRequests.filter((r) => r.id !== requestId));
   };
@@ -58,6 +87,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         openedRequests,
         addRequest,
+        addEnvironment,
         removeRequest,
         selectedRequestId,
         setSelectedRequestId,

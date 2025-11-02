@@ -15,7 +15,7 @@ interface RequestFormProps {
   collectionId?: string;
   index: number;
   tabs: WebRsRequest[];
-  setTabs: React.Dispatch<React.SetStateAction<WebRsRequest[]>>;
+  setTabs: (requests: WebRsRequest[]) => void;
   onSendRequest: (
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     url: string,
@@ -39,6 +39,11 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
 
   const isDirty = dirtyRequests.includes(request.id) ;
 
+  // Find the correct index of the request in the tabs array
+  const getRequestIndex = () => {
+    return tabs.findIndex(tab => tab.id === request.id);
+  };
+
   const updateTabsAndFocus = (updatedTabs: WebRsRequest[], updatedRequestId: string) => {
     setTabs(updatedTabs);
     setSelectedRequestId && setSelectedRequestId(updatedRequestId);
@@ -53,9 +58,10 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
   };
 
   const handleEditSave = (name: string, description: string) => {
-    const updatedRequest = { ...tabs[index], name, description };
+    const requestIndex = getRequestIndex();
+    const updatedRequest = { ...tabs[requestIndex], name, description };
     const newTabs = [...tabs];
-    newTabs[index] = updatedRequest;
+    newTabs[requestIndex] = updatedRequest;
     updateTabsAndFocus(newTabs, updatedRequest.id.toString());
     setIsEditModalVisible(false);
   };
@@ -108,8 +114,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
             <Select
             value={request.method}
             onChange={(value) => {
+              const requestIndex = getRequestIndex();
               const newTabs = [...tabs];
-              newTabs[index].method = value;
+              newTabs[requestIndex].method = value;
               updateTabsAndFocus(newTabs, request.id.toString());
             }}
             style={{ flex: 1 }}
@@ -122,8 +129,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
           <Input
             value={request.url}
             onChange={(e) => {
+              const requestIndex = getRequestIndex();
               const newTabs = [...tabs];
-              newTabs[index].url = e.target.value;
+              newTabs[requestIndex].url = e.target.value;
               updateTabsAndFocus(newTabs, request.id.toString())
             }}
             placeholder="Enter request URL"
@@ -144,8 +152,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
                       placeholder="Key"
                       value={header.key}
                       onChange={(e) => {
+                        const requestIndex = getRequestIndex();
                         const newTabs = [...tabs];
-                        newTabs[index].headers[headerIndex].key = e.target.value;
+                        newTabs[requestIndex].headers[headerIndex].key = e.target.value;
                         updateTabsAndFocus(newTabs, request.id.toString())
                       }}
                     />
@@ -153,8 +162,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
                       placeholder="Value"
                       value={header.value}
                       onChange={(e) => {
+                        const requestIndex = getRequestIndex();
                         const newTabs = [...tabs];
-                        newTabs[index].headers[headerIndex].value = e.target.value;
+                        newTabs[requestIndex].headers[headerIndex].value = e.target.value;
                         updateTabsAndFocus(newTabs, request.id.toString())
                       }}
                     />
@@ -162,8 +172,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
                       type="text"
                       icon={<DeleteOutlined />}
                       onClick={() => {
+                        const requestIndex = getRequestIndex();
                         const newTabs = [...tabs];
-                        newTabs[index].headers.splice(headerIndex, 1);
+                        newTabs[requestIndex].headers.splice(headerIndex, 1);
                         updateTabsAndFocus(newTabs, request.id.toString())
                       }}
                     />
@@ -175,8 +186,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
             </div>
             <Button
               onClick={() => {
+                const requestIndex = getRequestIndex();
                 const newTabs = [...tabs];
-                newTabs[index].headers.push({ key: '', value: '' });
+                newTabs[requestIndex].headers.push({ key: '', value: '' });
                 updateTabsAndFocus(newTabs, request.id.toString())
               }}
             >
@@ -192,8 +204,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
                       placeholder="Key"
                       value={param.key}
                       onChange={(e) => {
+                        const requestIndex = getRequestIndex();
                         const newTabs = [...tabs];
-                        newTabs[index].queryParams[paramIndex].key = e.target.value;
+                        newTabs[requestIndex].queryParams[paramIndex].key = e.target.value;
                         updateTabsAndFocus(newTabs, request.id.toString())
                       }}
                     />
@@ -201,8 +214,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
                       placeholder="Value"
                       value={param.value}
                       onChange={(e) => {
+                        const requestIndex = getRequestIndex();
                         const newTabs = [...tabs];
-                        newTabs[index].queryParams[paramIndex].value = e.target.value;
+                        newTabs[requestIndex].queryParams[paramIndex].value = e.target.value;
                         updateTabsAndFocus(newTabs, request.id.toString())
                       }}
                     />
@@ -214,8 +228,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
             </div>
             <Button
               onClick={() => {
+                const requestIndex = getRequestIndex();
                 const newTabs = [...tabs];
-                newTabs[index].queryParams.push({ key: '', value: '' });
+                newTabs[requestIndex].queryParams.push({ key: '', value: '' });
                 updateTabsAndFocus(newTabs, request.id.toString())
               }}
             >
@@ -227,8 +242,9 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
               rows={4}
               value={request.body}
               onChange={(e) => {
+                const requestIndex = getRequestIndex();
                 const newTabs = [...tabs];
-                newTabs[index].body = e.target.value;
+                newTabs[requestIndex].body = e.target.value;
                 updateTabsAndFocus(newTabs, request.id.toString())
               }}
               placeholder="Enter request body (JSON format)"
