@@ -20,6 +20,7 @@ export interface CollectionFolder {
   id: string;
   name: string;
   requests: WebRsRequest[];
+  folders?: CollectionFolder[];
 }
 
 export interface RequestHistory {

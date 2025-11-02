@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Button, Space, Modal, Tabs, Empty } from 'antd';
+import { Form, Input, Select, Button, Space, Tabs, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { type WebRsRequest } from '../types/request.types';
 import SaveToCollectionModal from './collections/SaveToCollectionModal';
+import EditRequestModal from './EditRequestModal';
 import { useCollectionContext } from '../context/CollectionProvider';
 import { useRequestContext } from '../context/RequestProvider';
 
@@ -25,7 +26,7 @@ interface RequestFormProps {
 }
 
 const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs, onSendRequest, collectionId }) => {
-  const { saveRequestToCollection } = useCollectionContext();
+  const { saveRequestToCollection, addRequestToFolder } = useCollectionContext();
    const {
       setSelectedRequestId,
       setDirtyRequests,
@@ -33,9 +34,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
 
       
     } = useRequestContext();
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalName, setModalName] = useState(request.name);
-  const [modalDescription, setModalDescription] = useState(request.description || '');
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
 
   const isDirty = dirtyRequests.includes(request.id) ;
@@ -53,20 +52,22 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
 
   };
 
-  const handleModalOk = () => {
-    const updatedRequest = { ...tabs[index], name: modalName, description: modalDescription };
+  const handleEditSave = (name: string, description: string) => {
+    const updatedRequest = { ...tabs[index], name, description };
     const newTabs = [...tabs];
     newTabs[index] = updatedRequest;
     updateTabsAndFocus(newTabs, updatedRequest.id.toString());
-    setIsModalVisible(false);
+    setIsEditModalVisible(false);
   };
 
-  const handleModalCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleSaveRequest = async (collectionId: string) => {
-    await saveRequestToCollection(collectionId, request);
+  const handleSaveRequest = async (collectionId: string, folderId?: string) => {
+    if (folderId) {
+      // Save to folder
+      await addRequestToFolder(collectionId, folderId, request);
+    } else {
+      // Save to collection root
+      await saveRequestToCollection(collectionId, request);
+    }
     setDirtyRequests((prev) => prev.filter((id) => id !== request.id));
   };
 
@@ -80,7 +81,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
           <Button
             type="link"
             icon={<EditOutlined />}
-            onClick={() => setIsModalVisible(true)}
+            onClick={() => setIsEditModalVisible(true)}
             />
             </div>
             <div className="request__actions">
@@ -95,29 +96,12 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
             </div>
         </div>
       </Form.Item>
-      <Modal
-        title="Edit Name and Description"
-        visible={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={handleModalCancel}
-      >
-        <Form layout="vertical">
-          <Form.Item label="Name">
-            <Input
-              value={modalName}
-              onChange={(e) => setModalName(e.target.value)}
-              placeholder="Enter request name"
-            />
-          </Form.Item>
-          <Form.Item label="Description">
-            <Input
-              value={modalDescription}
-              onChange={(e) => setModalDescription(e.target.value)}
-              placeholder="Enter request description"
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <EditRequestModal
+        visible={isEditModalVisible}
+        request={request}
+        onClose={() => setIsEditModalVisible(false)}
+        onSave={handleEditSave}
+      />
 
       <Form.Item label="URL & Method">
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

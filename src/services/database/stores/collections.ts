@@ -179,6 +179,35 @@ export const modifyRequestInCollection = async (
   }
 };
 
+export const findRequestInCollection = async (
+  collectionId: string,
+  requestId: string
+): Promise<WebRsRequest | null> => {
+  const db = await getDB();
+  const collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection) {
+    return collection.requests.find((req: WebRsRequest) => req.id === requestId) || null;
+  }
+  return null;
+};
+
+export const updateRequestInCollection = async (
+  collectionId: string,
+  requestId: string,
+  updatedRequest: WebRsRequest
+): Promise<void> => {
+  const db = await getDB();
+  const collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection) {
+    collection.requests = collection.requests.map((req: WebRsRequest) =>
+      req.id === requestId ? updatedRequest : req
+    );
+    await db.put(STORE_NAMES.COLLECTIONS, collection);
+  } else {
+    throw new Error('Collection not found');
+  }
+};
+
 export const removeRequestFromCollection = async (
   collectionId: string,
   requestId: string
@@ -192,3 +221,49 @@ export const removeRequestFromCollection = async (
     throw new Error('Collection not found');
   }
 };
+
+export const findAndUpdateFolderRequest = async (collectionId: string,
+  folderId: string,
+  request: WebRsRequest)  => {
+   const db = await getDB();
+  const collection: Collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection && collection.folders) {
+    // find folder
+    const found = findAndUpdateFolder(collection.folders, folderId, request);
+    if (!found) {
+      throw new Error('Folder not found');
+    }
+    await db.put(STORE_NAMES.COLLECTIONS, collection);
+  } else {
+    throw new Error('Collection not found');
+  }
+}
+
+const findAndUpdateFolder = (
+  parentFolders: CollectionFolder[],
+  folderId: string,
+  request: WebRsRequest
+): boolean => {
+  if (parentFolders && parentFolders.length > 0) {
+    const foundFolder = parentFolders.find((f: CollectionFolder) => f.id === folderId);
+    if (foundFolder) {
+      const foundRequestIndex = foundFolder.requests.findIndex(r => r.id === request.id);
+      // If request exists, replace it, otherwise add it to the folder
+      if (foundRequestIndex > -1) {
+        foundFolder.requests[foundRequestIndex] = request;
+      } else {
+        foundFolder.requests.push(request);
+      }
+      return true; // Found and updated
+    }
+    
+    // Recursively search in nested folders
+    for (const folder of parentFolders) {
+      if (folder.folders && folder.folders.length > 0) {
+        const found = findAndUpdateFolder(folder.folders, folderId, request);
+        if (found) return true;
+      }
+    }
+  }
+  return false; // Not found
+}

@@ -3,13 +3,16 @@ import {
   getCollections,
   addRequestToCollection,
   modifyRequestInCollection,
+  removeRequestFromCollection,
   addCollection as addCollectionToDB
 } from '../services/database';
 import {
   addFolderToCollection,
   deleteFolderFromCollection,
   addRequestToFolder,
-  removeRequestFromFolder
+  removeRequestFromFolder,
+  findRequestInCollection,
+  findAndUpdateFolderRequest
 } from '../services/database/stores/collections';
 import type { Collection, WebRsRequest, CollectionFolder } from '../types/request.types';
 
@@ -23,6 +26,7 @@ interface CollectionContextProps {
   deleteFolder: (collectionId: string, folderId: string) => Promise<void>;
   addRequestToFolder: (collectionId: string, folderId: string, request: WebRsRequest) => Promise<void>;
   removeRequestFromFolder: (collectionId: string, folderId: string, requestId: string) => Promise<void>;
+  removeRequestFromCollection: (collectionId: string, requestId: string) => Promise<void>;
 }
 
 const CollectionContext = createContext<CollectionContextProps | undefined>(undefined);
@@ -69,6 +73,18 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const addRequestToFolderInCollection = async (collectionId: string, folderId: string,
+      request: WebRsRequest) => {
+    try {
+      // Use findAndUpdateFolderRequest to add or update the request in the folder
+      await findAndUpdateFolderRequest(collectionId, folderId, request);
+      await fetchCollections();
+    } catch (error) {
+      console.error('Error adding request to folder:', error);
+      throw error;
+    }
+  }
+
   const addNewCollection = async (name: string): Promise<void> => {
     await addCollectionToDB(name);
     await fetchCollections(); // Refresh collections after adding a new one
@@ -80,6 +96,16 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await fetchCollections(); // Refresh collections
   };
 
+  const deleteRequestFromCollection = async (collectionId: string, requestId: string): Promise<void> => {
+    try {
+      await removeRequestFromCollection(collectionId, requestId);
+      await fetchCollections();
+    } catch (error) {
+      console.error('Error removing request from collection:', error);
+      throw error;
+    }
+  };
+
   return (
     <CollectionContext.Provider value={{
       collections,
@@ -89,8 +115,9 @@ export const CollectionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       addFullCollection,
       addFolder: addFolderToCollection,
       deleteFolder: deleteFolderFromCollection,
-      addRequestToFolder,
-      removeRequestFromFolder
+      addRequestToFolder: addRequestToFolderInCollection,
+      removeRequestFromFolder,
+      removeRequestFromCollection: deleteRequestFromCollection
     }}>
       {children}
     </CollectionContext.Provider>

@@ -1,13 +1,15 @@
-import { Button, Tree, Dropdown, Menu, Modal, Input, Select } from 'antd';
-import { FileFilled, FileTwoTone, FolderFilled, FolderTwoTone, MoreOutlined, PlusOutlined, ReloadOutlined, ImportOutlined, DatabaseFilled } from '@ant-design/icons';
+import { Button, Tree, Modal, Input, Select } from 'antd';
+import { PlusOutlined, ReloadOutlined, DatabaseFilled } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import AddCollectionModal from './AddCollectionModal';
 import AddFolderModal from './AddFolderModal';
 import ImportCurlButton from './ImportCurlButton';
 import ImportPostmanCollection from '../ImportPostmanCollection';
-import { renameCollectionAndRefresh, renameFolderAndRefresh, deleteCollectionAndRefresh, prepareEmptyRequest } from '../../utils/collection-utils';
-import { useRequestContext } from '../../context/RequestProvider';
+import { renameCollectionAndRefresh, renameFolderAndRefresh } from '../../utils/collection-utils';
 import { useCollectionContext } from '../../context/CollectionProvider';
+import FolderItem from './FolderItem';
+import CollectionItem from './CollectionItem';
+import RequestItem from './RequestItem';
 import type { CollectionFolder } from '../../types/request.types';
 
 
@@ -15,8 +17,7 @@ const { Search } = Input;
 
 
 const Collections: React.FC = () => {
-  const { addRequest, setSelectedRequestId, openedRequests } = useRequestContext();
-  const { collections, addFolder, deleteFolder, addRequestToFolder, removeRequestFromFolder, refreshCollections } = useCollectionContext();
+  const { collections, addFolder, refreshCollections } = useCollectionContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -35,10 +36,6 @@ const Collections: React.FC = () => {
   const handleCloseModal = () => setIsModalOpen(false);
   const handleOpenImportModal = () => setIsImportModalOpen(true);
   const handleCloseImportModal = () => setIsImportModalOpen(false);
-  const handleOpenFolderModal = (collectionId: string) => {
-    setFolderCollectionId(collectionId);
-    setIsFolderModalOpen(true);
-  };
   const handleCloseFolderModal = () => {
     setIsFolderModalOpen(false);
     setFolderCollectionId(null);
@@ -80,68 +77,10 @@ const Collections: React.FC = () => {
         await addFolder(folderCollectionId, newfolderNameParam);
         console.log(`Added folder "${newfolderNameParam}" to collection ${folderCollectionId}`);
         handleCloseFolderModal();
+        refreshCollections();
       } catch (error) {
         console.error(`Failed to add folder:`, error);
       }
-    }
-  };
-
-  const handleMenuClick = async (key: string, collectionId: string, folderId?: string) => {
-    switch (key) {
-      case 'addRequest':
-        const newRequest = prepareEmptyRequest(collectionId);
-        addRequest(newRequest);
-        setSelectedRequestId && setSelectedRequestId?.(newRequest.id);
-        console.log(`Added request to collection ${collectionId}`);
-        break;
-      case 'addFolder':
-        // if (folderId) {
-          handleOpenFolderModal(collectionId);
-        // }
-        break;
-      case 'rename':
-        setRenameCollectionId(collectionId);
-        setIsRenameModalOpen(true);
-        break;
-      case 'delete':
-        try {
-          await deleteCollectionAndRefresh(collectionId);
-          console.log(`Deleted collection ${collectionId}`);
-        } catch (error) {
-          console.error(`Failed to delete collection ${collectionId}:`, error);
-        }
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleFolderMenuClick = async (key: string, collectionId: string, folderId: string) => {
-    switch (key) {
-      case 'addRequest':
-        const newRequest = prepareEmptyRequest(collectionId);
-        addRequest(newRequest);
-        setSelectedRequestId && setSelectedRequestId?.(newRequest.id);
-        console.log(`Added request to folder ${folderId} in collection ${collectionId}`);
-        break;
-      case 'rename':
-        setRenameCollectionId(folderId);
-        setFolderCollectionId(collectionId);
-        setRenameFolderId(folderId);
-        setIsRenamingFolder(true);
-        setIsRenameModalOpen(true);
-        break;
-      case 'delete':
-        try {
-          await deleteFolder(collectionId, folderId);
-          console.log(`Deleted folder ${folderId} from collection ${collectionId}`);
-          refreshCollections();
-        } catch (error) {
-          console.error(`Failed to delete folder:`, error);
-        }
-        break;
-      default:
-        break;
     }
   };
 
@@ -177,28 +116,9 @@ const Collections: React.FC = () => {
         } = {
           key: `${collection.id}`,
           title: (
-            <span style={{ display: 'flex', justifyContent: 'space-between', }}>
-              <span>
-                <FolderFilled />
-                <span style={{marginLeft: '5px'}}>{collection.name}</span>
-              </span>
-              <Dropdown
-                overlay={
-                  <Menu
-                    onClick={(info) => handleMenuClick(info.key as string, collection.id)}
-                    items={[
-                      { key: 'addRequest', label: 'Add Request' },
-                      { key: 'addFolder', label: 'Add Folder' },
-                      { key: 'rename', label: 'Rename' },
-                      { key: 'delete', label: 'Delete' },
-                    ]}
-                  />
-                }
-                trigger={['click']}
-              >
-                <MoreOutlined style={{ cursor: 'pointer' }} />
-              </Dropdown>
-            </span>
+            <CollectionItem
+              collection={collection}
+            />
           ),
           children: []
         };
@@ -208,27 +128,10 @@ const Collections: React.FC = () => {
           collectionItem.children = collection.folders.map((folder: CollectionFolder) => ({
             key: folder.id,
             title: (
-              <span style={{ display: 'flex', justifyContent: 'space-between', }}>
-                <span>
-                  <FolderTwoTone />
-                  <span style={{marginLeft: '5px'}}>{folder.name}</span>
-                </span>
-                <Dropdown
-                  overlay={
-                    <Menu
-                      onClick={(info) => handleFolderMenuClick(info.key as string, collection.id, folder.id)}
-                      items={[
-                        { key: 'addRequest', label: 'Add Request' },
-                        { key: 'rename', label: 'Rename' },
-                        { key: 'delete', label: 'Delete' },
-                      ]}
-                    />
-                  }
-                  trigger={['click']}
-                >
-                  <MoreOutlined style={{ cursor: 'pointer' }} />
-                </Dropdown>
-              </span>
+              <FolderItem
+                folder={folder}
+                collectionId={collection.id}
+              />
             ),
             children: folder.requests
               .filter((request) =>
@@ -238,28 +141,11 @@ const Collections: React.FC = () => {
               .map((request) => ({
                 key: `${request.id}`,
                 title: (
-                  <div
-                    style={{
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onClick={() => {
-                      const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
-                      if (isAlreadyOpened) {
-                        setSelectedRequestId && setSelectedRequestId(request.id);
-                      } else {
-                        addRequest(request);
-                        setSelectedRequestId && setSelectedRequestId(request.id);
-                      }
-                    }}
-                  >
-                    <FileFilled />
-                    <span style={{marginLeft: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{request.name}</span>
-                  </div>
+                  <RequestItem
+                    request={request}
+                    collectionId={collection.id}
+                    folderId={folder.id}
+                  />
                 ),
                 isLeaf: true,
               }))
@@ -276,28 +162,10 @@ const Collections: React.FC = () => {
             .map((request) => ({
               key: `${request.id}`,
               title: (
-                <div
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onClick={() => {
-                    const isAlreadyOpened = openedRequests.some((req) => req.id === request.id);
-                    if (isAlreadyOpened) {
-                      setSelectedRequestId && setSelectedRequestId(request.id);
-                    } else {
-                      addRequest(request);
-                      setSelectedRequestId && setSelectedRequestId(request.id);
-                    }
-                  }}
-                >
-                  <FileFilled />
-                  <span style={{marginLeft: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{request.name}</span>
-                </div>
+                <RequestItem
+                    request={request}
+                    collectionId={collection.id}
+                />
               ),
               isLeaf: true,
             }));
