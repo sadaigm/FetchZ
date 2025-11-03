@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Switch, Button, Tabs, message, Modal, Input } from 'antd';
+import { Card, Switch, Button, Tabs, message, Modal, Input, Space } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import SavedResponsesPanel from './SavedResponsesPanel';
 import CurrentResponse from './CurrentResponse';
@@ -12,14 +12,20 @@ interface ResponsePanelProps {
   response: any;
   requestId?: string;
   collectionId?: string;
+  folderId?: string;
   savedResponses?: SavedResponse[];
+  saveRequestWithResponse: (name : string, content:string) => void;
+  handleDeleteResponse: (responseId: string) => void;
 }
 
 const ResponsePanel: React.FC<ResponsePanelProps> = ({
   response,
   requestId,
   collectionId,
-  savedResponses = []
+  savedResponses = [],
+  saveRequestWithResponse,
+  handleDeleteResponse: handleDeleteResponseCallBack
+
 }) => {
   const [isJsonView, setIsJsonView] = useState(true);
   const [activeTabKey, setActiveTabKey] = useState('current');
@@ -33,7 +39,7 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({
     }
 
     try {
-      await saveResponseToRequest(collectionId, requestId, name, content);
+      await saveRequestWithResponse(name, content);
       message.success('Response saved successfully');
     } catch (error) {
       message.error('Failed to save response');
@@ -49,6 +55,7 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({
 
     try {
       await deleteSavedResponse(collectionId, requestId, responseId);
+      handleDeleteResponseCallBack(responseId);
       message.success('Response deleted successfully');
     } catch (error) {
       message.error('Failed to delete response');
@@ -92,7 +99,9 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({
         title="Response Details"
         style={{ marginTop: '16px' }}
         extra={[
-          <Switch
+          // add Space
+          <Space>
+            <Switch
             key="view-switch"
             checked={isJsonView}
             onChange={() => setIsJsonView(!isJsonView)}
@@ -108,6 +117,7 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({
           >
             Save Response
           </Button>
+          </Space>
         ]}
       >
         <Tabs activeKey={activeTabKey} onChange={setActiveTabKey}>

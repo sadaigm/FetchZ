@@ -70,17 +70,16 @@ const SavedResponsesPanel: React.FC<SavedResponsesPanelProps> = ({
 
   return (
     <div>
-      <div style={{ marginBottom: '16px' }}>
-        <h3>Saved Responses</h3>
+      <div style={{ marginBottom: '5px' }}>
       </div>
 
       {savedResponses.length === 0 ? (
         <p>No saved responses yet</p>
       ) : (
-        <List
-          bordered
-          dataSource={savedResponses}
-          renderItem={(response) => (
+        <div style={{ height: '320px', overflowY: 'auto' }}>
+          <List
+            dataSource={savedResponses}
+            renderItem={(response) => (
             <List.Item
               actions={[
                 <Button
@@ -115,7 +114,8 @@ const SavedResponsesPanel: React.FC<SavedResponsesPanelProps> = ({
               />
             </List.Item>
           )}
-        />
+          />
+        </div>
       )}
 
       <Modal

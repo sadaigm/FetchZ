@@ -6,7 +6,8 @@ import { sendRequest } from '../apiClient';
 import { useRequestHistoryContext } from '../context/RequestHistoryProvider';
 import { useCollectionContext } from '../context/CollectionProvider';
 import { v4 as uuidv4 } from 'uuid';
-import type { WebRsRequest } from '../types/request.types';
+import type { SavedResponse, WebRsRequest } from '../types/request.types';
+import { generateId } from '../services/database/stores/collections';
 
 interface NetworkPanelProps {
   request: WebRsRequest;
@@ -14,13 +15,14 @@ interface NetworkPanelProps {
   tabs: WebRsRequest[];
   setTabs: (requests: WebRsRequest[]) => void;
   collectionId?: string;
+  folderId?: string;
 }
 
-const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTabs, collectionId }) => {
+const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTabs, collectionId, folderId }) => {
   const [response, setResponse] = useState<any>(null);
   const [currentRequest, setCurrentRequest] = useState<WebRsRequest>(request);
   const { addRequestHistory } = useRequestHistoryContext();
-  const { refreshCollections } = useCollectionContext();
+  const { saveRequestToCollection, refreshCollections, addRequestToFolder } = useCollectionContext();
 
   const handleSendRequest = async (
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -80,6 +82,43 @@ const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTa
     }
   };
 
+  const saveRequestWithResponse = async (responseName : string, responseContent:string) => {
+    if(collectionId){    
+    const newSavedResponse = {
+        id: generateId(),
+        name: responseName,
+        content: responseContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (!request.savedResponses) {
+        request.savedResponses = [];
+      }
+      request.savedResponses.push(newSavedResponse);
+      if (folderId) {
+      // Save to folder
+      await addRequestToFolder(collectionId, folderId, request);
+    } else {
+      // Save to collection root
+      await saveRequestToCollection(collectionId, request);
+    }
+    setCurrentRequest(request);
+      }
+  }
+
+  const handleDeleteResponse = (responseId: string ) => {
+    console.log("delete : ", responseId);
+     request.savedResponses = request.savedResponses.filter(
+              (response: SavedResponse) => response.id !== responseId
+            );
+            setCurrentRequest(prev => {
+              prev.savedResponses = prev.savedResponses.filter(
+              (response: SavedResponse) => response.id !== responseId
+            );
+            return {...prev};
+            });
+  }
+
   return (
     <Row gutter={[16, 16]} style={{ height: '100%', flexDirection: 'column' }}>
       <Col style={{ flex: '0 1 auto', overflowY: 'auto' }}>
@@ -98,6 +137,9 @@ const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTa
           requestId={currentRequest.id}
           collectionId={collectionId}
           savedResponses={currentRequest.savedResponses}
+          folderId={folderId}
+          saveRequestWithResponse={saveRequestWithResponse}
+          handleDeleteResponse={handleDeleteResponse}
         />
       </Col>
     </Row>

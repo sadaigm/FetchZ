@@ -144,7 +144,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
       <Form.Item>
         <Tabs defaultActiveKey="1">
           <TabPane tab="Headers" key="1">
-            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px' }}>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px', marginBottom:'10px' }}>
               {request.headers.length > 0 ? (
                 request.headers.map((header, headerIndex) => (
                   <Space key={headerIndex} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
@@ -196,7 +196,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
             </Button>
           </TabPane>
           <TabPane tab="Query Parameters" key="2">
-            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px' }}>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #d9d9d9', padding: '8px', borderRadius: '4px', marginBottom:'10px' }}>
               {request.queryParams.length > 0 ? (
                 request.queryParams.map((param, paramIndex) => (
                   <Space key={paramIndex} style={{ display: 'flex', marginBottom: 8 }} align="baseline">

@@ -93,6 +93,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
         const isEnvironment = tab.type === "Environment";
         const tabData = tab.data;
         const collectionId = tab.collectionId;
+        const folderId = tab.folderId;
         
         return (
           <TabPane
@@ -105,6 +106,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
             {isRequest && (
               <NetworkPanel
                 collectionId={collectionId}
+                folderId={folderId}
                 request={tabData as WebRsRequest}
                 index={index}
                 tabs={tabs.filter(t => t.type === "WebRsRequest").map(t => t.data as WebRsRequest)}

@@ -8,11 +8,12 @@ export interface OpenedWindowInstance {
   data: WebRsRequest | Environment;
   id: string; // for removal & adding
   collectionId?: string;
+  folderId?: string;
 }
 
 interface RequestContextProps {
   openedRequests: OpenedWindowInstance[];
-  addRequest: (request: WebRsRequest, collectionId?: string) => void;
+  addRequest: (request: WebRsRequest, collectionId?: string, folderId?: string) => void;
   addEnvironment: (environment: Environment) => void;
   removeRequest: (requestId: string) => void;
   selectedRequestId?: string;
@@ -31,7 +32,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [ dirtyRequests, setDirtyRequests ] = useState<Array<string>>([] as Array<string>);
   const { collections } = useCollectionContext();
 
-  const addRequest = (request: WebRsRequest, collectionId?: string) => {
+  const addRequest = (request: WebRsRequest, collectionId?: string, folderId?: string) => {
     setOpenedRequests((prevRequests) => {
       if (!prevRequests.some((r) => r.id === request.id)) {
         const newWindow: OpenedWindowInstance = {
@@ -41,6 +42,9 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
         if(collectionId){
           newWindow.collectionId = collectionId;
+        }
+        if(folderId){
+          newWindow.folderId = folderId;
         }
         return [...prevRequests, newWindow];
       }
