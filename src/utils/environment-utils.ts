@@ -1,5 +1,5 @@
 import { getEnvironments, deleteEnvironment, renameEnvironment } from '../services/database';
-import type { Environment, EnvironmentValue } from '../types/environment.types';
+import type { Environment, EnvironmentValue, EnvironmentValueWithCurrent } from '../types/environment.types';
 
 /**
  * Fetches and formats environments for use in the UI.
@@ -53,12 +53,13 @@ export const prepareEmptyEnvironment = (name: string): Environment => {
 /**
  * Prepares an empty environment value object with default values.
  * @param {string} key - The key for the environment value.
- * @returns {EnvironmentValue} A new empty environment value object.
+ * @returns {EnvironmentValueWithCurrent} A new empty environment value object with current value.
  */
-export const prepareEmptyEnvironmentValue = (key: string): EnvironmentValue => {
+export const prepareEmptyEnvironmentValue = (key: string): EnvironmentValueWithCurrent => {
   return {
     key,
     value: '',
+    currentValue: '',
     type: 'default',
     enabled: true
   };

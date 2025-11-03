@@ -8,15 +8,17 @@ import {
   addEnvironmentValue,
   updateEnvironmentValue,
   deleteEnvironmentValue,
-  updateEnvironment
+  updateEnvironment,
+  getConfiguration,
+  toggleActiveEnvironment as toggleActiveEnvironmentInDB
 } from '../services/database';
-import type { Environment, EnvironmentValue } from '../types/environment.types';
+import type { Environment, EnvironmentValue, EnvironmentValueWithCurrent } from '../types/environment.types';
 
 interface EnvironmentContextProps {
   environments: Environment[];
   activeEnvironment: Environment | null;
   refreshEnvironments: () => Promise<void>;
-  setActiveEnvironment: (environment: Environment | null) => void;
+  toggleEnvironmentActive: (environment: Environment) => Promise<boolean>;
   addNewEnvironment: (name: string) => Promise<void>;
   addFullEnvironment: (environment: Environment) => Promise<void>;
   updateEnvironmentName: (id: string, newName: string) => Promise<void>;
@@ -25,17 +27,69 @@ interface EnvironmentContextProps {
   updateValueInEnvironment: (environmentId: string, key: string, updatedValue: Partial<EnvironmentValue>) => Promise<void>;
   removeValueFromEnvironment: (environmentId: string, key: string) => Promise<void>;
   saveEnvironment: (environment: Environment) => Promise<void>;
+  updateCurrentValue: (environmentId: string, key: string, currentValue: string) => void;
+  currentValues:  Map<string, Map<string, string>>;
 }
 
 const EnvironmentContext = createContext<EnvironmentContextProps | undefined>(undefined);
 
+// Function to load current values from localStorage
+const loadCurrentValuesFromStorage = (): Map<string, Map<string, string>> => {
+  const storedCurrentValues = localStorage.getItem('environmentCurrentValues');
+  if (!storedCurrentValues) {
+    return new Map();
+  }
+  
+  try {
+    const parsed = JSON.parse(storedCurrentValues);
+    const currentValuesMap = new Map<string, Map<string, string>>();
+    
+    Object.keys(parsed).forEach(envId => {
+      currentValuesMap.set(envId, new Map(Object.entries(parsed[envId])));
+    });
+    
+    return currentValuesMap;
+  } catch (error) {
+    console.error('Failed to parse current values from localStorage:', error);
+    return new Map();
+  }
+};
+
+
 export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [activeEnvironment, setActiveEnvironmentState] = useState<Environment | null>(null);
+  const [currentValues, setCurrentValues] = useState<Map<string, Map<string, string>>>(loadCurrentValuesFromStorage()); // environmentId -> key -> currentValue
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Save current values to localStorage whenever they change
+  React.useEffect(() => {
+    const currentValuesObj: Record<string, Record<string, string>> = {};
+    
+    currentValues.forEach((envValues, envId) => {
+      currentValuesObj[envId] = {};
+      envValues.forEach((value, key) => {
+        currentValuesObj[envId][key] = value;
+      });
+    });
+    
+    localStorage.setItem('environmentCurrentValues', JSON.stringify(currentValuesObj));
+  }, [currentValues]);
 
   const fetchEnvironments = async () => {
     const fetchedEnvironments = await getEnvironments();
     setEnvironments(fetchedEnvironments);
+    
+    // Load active environment from configuration
+    const config = await getConfiguration();
+    if (config?.activeEnvironmentId) {
+      const activeEnv = fetchedEnvironments.find(env => env.id === config.activeEnvironmentId);
+      if (activeEnv) {
+        setActiveEnvironmentState(activeEnv);
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -53,9 +107,17 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       window.removeEventListener('refreshEnvironments', handleRefreshEnvironments);
     };
   }, [fetchEnvironments]);
-
-  const setActiveEnvironment = (environment: Environment | null) => {
-    setActiveEnvironmentState(environment);
+  
+  const toggleEnvironmentActive = async (environment: Environment): Promise<boolean> => {
+    const isActive = await toggleActiveEnvironmentInDB(environment.id);
+    
+    if (isActive) {
+      setActiveEnvironmentState(environment);
+    } else {
+      setActiveEnvironmentState(null);
+    }
+    
+    return isActive;
   };
 
   const addNewEnvironment = async (name: string): Promise<void> => {
@@ -86,6 +148,13 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (activeEnvironment && activeEnvironment.id === id) {
       setActiveEnvironmentState(null);
     }
+    
+    // Clear current values for this environment
+    setCurrentValues(prev => {
+      const newValues = new Map(prev);
+      newValues.delete(id);
+      return newValues;
+    });
   };
 
   const addValueToEnvironment = async (
@@ -135,6 +204,19 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setActiveEnvironmentState(updatedEnvironment);
       }
     }
+    
+    // Remove current value for this key
+    setCurrentValues(prev => {
+      const newValues = new Map(prev);
+      const envValues = newValues.get(environmentId);
+      if (envValues) {
+        envValues.delete(key);
+        if (envValues.size === 0) {
+          newValues.delete(environmentId);
+        }
+      }
+      return newValues;
+    });
   };
 
   const saveEnvironment = async (environment: Environment): Promise<void> => {
@@ -146,13 +228,29 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setActiveEnvironmentState(environment);
     }
   };
+  
+  const updateCurrentValue = (environmentId: string, key: string, currentValue: string): void => {
+    console.log({environmentId, key, currentValue })
+    setCurrentValues(prev => {
+      const newValues = new Map(prev);
+      let envValues = newValues.get(environmentId);
+      
+      if (!envValues) {
+        envValues = new Map();
+        newValues.set(environmentId, envValues);
+      }
+      
+      envValues.set(key, currentValue);
+      return newValues;
+    });
+  };
 
   return (
     <EnvironmentContext.Provider value={{
       environments,
       activeEnvironment,
       refreshEnvironments: fetchEnvironments,
-      setActiveEnvironment,
+      toggleEnvironmentActive,
       addNewEnvironment,
       addFullEnvironment,
       updateEnvironmentName,
@@ -160,7 +258,9 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       addValueToEnvironment,
       updateValueInEnvironment,
       removeValueFromEnvironment,
-      saveEnvironment
+      saveEnvironment,
+      updateCurrentValue,
+      currentValues
     }}>
       {children}
     </EnvironmentContext.Provider>

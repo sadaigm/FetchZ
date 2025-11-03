@@ -1,7 +1,8 @@
 .sidebar-tabs-vertical {
   height: 100%;
   overflow: auto;
-  padding: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
 .tab-content {

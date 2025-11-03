@@ -5,11 +5,18 @@ import type { Environment } from '../../types/environment.types';
 export type { Collection, RequestHistory, WebRsRequest };
 export type { Environment };
 
+// Configuration type
+export interface Configuration {
+  id: string;
+  activeEnvironmentId?: string;
+}
+
 // Database-specific types
 export interface DatabaseSchema {
   collections: Collection;
   requestHistory: RequestHistory;
   environments: Environment;
+  configuration: Configuration;
 }
 
 // Store names
@@ -17,6 +24,7 @@ export const STORE_NAMES = {
   COLLECTIONS: 'collections',
   REQUEST_HISTORY: 'requestHistory',
   ENVIRONMENTS: 'environments',
+  CONFIGURATION: 'configuration',
 } as const;
 
 // Database configuration

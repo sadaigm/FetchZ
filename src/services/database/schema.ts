@@ -24,11 +24,23 @@ export const createSchema = (db: IDBPDatabase, oldVersion: number): void => {
     db.createObjectStore(STORE_NAMES.ENVIRONMENTS, {
       keyPath: 'id'
     });
+    
+    // Create configuration store
+    db.createObjectStore(STORE_NAMES.CONFIGURATION, {
+      keyPath: 'id'
+    });
   }
   
   // For database upgrades, add environments store if it doesn't exist
   if (oldVersion > 0 && !db.objectStoreNames.contains(STORE_NAMES.ENVIRONMENTS)) {
     db.createObjectStore(STORE_NAMES.ENVIRONMENTS, {
+      keyPath: 'id'
+    });
+  }
+  
+  // For database upgrades, add configuration store if it doesn't exist
+  if (oldVersion > 0 && !db.objectStoreNames.contains(STORE_NAMES.CONFIGURATION)) {
+    db.createObjectStore(STORE_NAMES.CONFIGURATION, {
       keyPath: 'id'
     });
   }

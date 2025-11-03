@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Button, List, Card, Modal, Form, Input, Switch, Select, Space, Typography, Popconfirm, message } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, List, Card, Modal, Form, Input, Switch, Select, Space, Typography, Popconfirm, message, Tooltip } from 'antd';
+import { PlusOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons';
 import { useEnvironmentContext } from '../../context/EnvironmentProvider';
 import { useRequestContext } from '../../context/RequestProvider';
 import { prepareEmptyEnvironmentValue } from '../../utils/environment-utils';
-import type { Environment, EnvironmentValue } from '../../types/environment.types';
+import type { Environment, EnvironmentValue, EnvironmentValueWithCurrent } from '../../types/environment.types';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -16,7 +16,11 @@ interface EnvironmentDetailsProps {
 const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) => {
   const {
     saveEnvironment,
-    refreshEnvironments
+    refreshEnvironments,
+    activeEnvironment,
+    toggleEnvironmentActive,
+    updateCurrentValue,
+    currentValues
   } = useEnvironmentContext();
 
   const {
@@ -27,12 +31,24 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
   const [isAddValueModalVisible, setIsAddValueModalVisible] = useState(false);
   const [editingEnvironment, setEditingEnvironment] = useState<Environment>({ ...environment });
   const [originalEnvironment, setOriginalEnvironment] = useState<Environment>({ ...environment });
-  const [newEnvironmentValue, setNewEnvironmentValue] = useState<EnvironmentValue>({
+  const [newEnvironmentValue, setNewEnvironmentValue] = useState<EnvironmentValueWithCurrent>({
     key: '',
     value: '',
+    currentValue: '',
     type: 'default',
     enabled: true
   });
+  
+  // Get the current environment with current values applied
+  const currentEnvironmentWithCurrent = React.useMemo(() => {
+    return {
+      ...environment,
+      values: environment.values.map(value => ({
+        ...value,
+        currentValue: currentValues.get(environment.id)?.get(value.key) || value.value
+      }))
+    };
+  }, [environment, currentValues]);
 
   // Check if environment has changes
   const checkIfDirty = (current: Environment, original: Environment) => {
@@ -41,6 +57,9 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
 
   // Check if this environment is dirty
   const isDirty = dirtyRequests.includes(environment.id);
+  
+  // Check if this environment is active
+  const isActive = activeEnvironment?.id === environment.id;
 
   const handleAddValue = () => {
     if (!newEnvironmentValue.key.trim()) {
@@ -54,9 +73,18 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
       return;
     }
     
+    // Create new environment value with initial value
+    const newValue: EnvironmentValue = {
+      key: newEnvironmentValue.key,
+      value: newEnvironmentValue.value || '',
+      
+      type: newEnvironmentValue.type,
+      enabled: newEnvironmentValue.enabled
+    };
+    
     const updatedEnvironment = {
       ...editingEnvironment,
-      values: [...editingEnvironment.values, { ...newEnvironmentValue }]
+      values: [...editingEnvironment.values, newValue]
     };
     
     setEditingEnvironment(updatedEnvironment);
@@ -102,6 +130,45 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
       });
     } else {
       setDirtyRequests((prev) => prev.filter((id) => id !== environment.id));
+    }
+  };
+  
+  const handleUpdateCurrentValue = (key: string, currentValue: string) => {
+    // Update current value in provider state (not in editing environment)
+    // This doesn't mark the environment as dirty since current values are temporary
+    updateCurrentValue(environment.id, key, currentValue);
+  };
+
+  const handleUpdateInitialValue = (key: string, initialValue: string) => {
+    const updatedValues = editingEnvironment.values.map(v =>
+      v.key === key ? { ...v, initialValue } : v
+    );
+    
+    const updatedEnvironment = {
+      ...editingEnvironment,
+      values: updatedValues
+    };
+    
+    setEditingEnvironment(updatedEnvironment);
+    
+    // Update dirty state using RequestContext
+    if (checkIfDirty(updatedEnvironment, originalEnvironment)) {
+      setDirtyRequests((prev) => {
+        const newDirtyRequests = [...prev];
+        if (!newDirtyRequests.includes(environment.id)) {
+          newDirtyRequests.push(environment.id);
+        }
+        return newDirtyRequests;
+      });
+    } else {
+      setDirtyRequests((prev) => prev.filter((id) => id !== environment.id));
+    }
+  };
+
+  const handleResetToInitial = (key: string) => {
+    const value = editingEnvironment.values.find(v => v.key === key);
+    if (value?.value) {
+      handleUpdateCurrentValue(key, value.value);
     }
   };
 
@@ -162,6 +229,18 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
           {isDirty && <Text type="warning" style={{ marginLeft: '8px', fontSize: '14px' }}>(unsaved changes)</Text>}
         </Title>
         <Space>
+          <Tooltip
+            title={isActive ? "Active" : "Set as Active"}
+          >
+            <Button
+              type={isActive ? "primary" : "default"}
+              icon={isActive ? <CheckOutlined /> : <CheckOutlined />}
+              onClick={async () => {
+                const isNowActive = await toggleEnvironmentActive(environment);
+                message.success(isNowActive ? `Environment "${environment.name}" set as active` : `Environment "${environment.name}" deactivated`);
+              }}
+            />
+          </Tooltip>
           {isDirty && (
             <Button onClick={handleCancelChanges}>
               Cancel
@@ -177,7 +256,7 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
         </Space>
       </div>
 
-      {/* Environment Values */}
+      {/* Environment Variables */}
       <Card
         title="Environment Variables"
         extra={
@@ -190,14 +269,14 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
         }
       >
         <List
-          dataSource={editingEnvironment.values}
-          renderItem={(value) => (
+          dataSource={currentEnvironmentWithCurrent.values}
+          renderItem={(envValue: EnvironmentValueWithCurrent) => (
             <List.Item
               actions={[
                 <Popconfirm
                   key="delete"
                   title="Are you sure you want to delete this value?"
-                  onConfirm={() => handleDeleteValue(value.key)}
+                  onConfirm={() => handleDeleteValue(envValue.key)}
                 >
                   <Button type="text" danger icon={<DeleteOutlined />} />
                 </Popconfirm>
@@ -206,17 +285,16 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
               <List.Item.Meta
                 title={
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Text strong>{value.key}</Text>
+                    <Text strong>{envValue.key}</Text>
                     <Switch
                       size="small"
-                      checked={value.enabled}
-                      onChange={(checked) => handleUpdateValue(value.key, { enabled: checked })}
+                      checked={envValue.enabled}
+                      onChange={(checked) => handleUpdateValue(envValue.key, { enabled: checked })}
                     />
                     <Select
-                      value={value.type}
+                      value={envValue.type}
                       size="small"
-                      style={{ width: '80px' }}
-                      onChange={(type) => handleUpdateValue(value.key, { type: type as 'default' | 'secret' | 'any' })}
+                      onChange={(type) => handleUpdateValue(envValue.key, { type: type as 'default' | 'secret' | 'any' })}
                     >
                       <Option value="default">Default</Option>
                       <Option value="secret">Secret</Option>
@@ -225,11 +303,53 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
                   </div>
                 }
                 description={
-                  <Input
-                    value={value.value}
-                    placeholder="Value"
-                    onChange={(e) => handleUpdateValue(value.key, { value: e.target.value })}
-                  />
+                  <div>
+                    <List
+                      size="small"
+                      dataSource={[
+                        {
+                          title: 'Initial Value',
+                          description: (
+                            <Input
+                              value={envValue.value || ''}
+                              placeholder="Initial Value"
+                              onChange={(e) => handleUpdateInitialValue(envValue.key, e.target.value)}
+                            />
+                          )
+                        },
+                        {
+                          title: 'Current Value',
+                          description: (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Input
+                                value={envValue.currentValue || envValue.value}
+                                placeholder="Value"
+                                onChange={(e) => handleUpdateCurrentValue(envValue.key, e.target.value)}
+                              />
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                {envValue.value && envValue.value !== (envValue.currentValue) && (
+                                  <Button
+                                    size="small"
+                                    type="link"
+                                    onClick={() => handleResetToInitial(envValue.key)}
+                                    style={{ padding: '0 4px', height: 'auto' }}
+                                  >
+                                    Reset to Initial
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        }
+                      ]}
+                      renderItem={(item) => (
+                        <div style={{ marginBottom: '8px' }}>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>{item.title}:</Text>
+                          <div style={{ marginTop: '4px' }}>{item.description}</div>
+                        </div>
+                      )}
+                    />
+                  </div>
                 }
               />
             </List.Item>
@@ -255,11 +375,11 @@ const EnvironmentDetails: React.FC<EnvironmentDetailsProps> = ({ environment }) 
               placeholder="Enter key"
             />
           </Form.Item>
-          <Form.Item label="Value">
+          <Form.Item label="Initial Value">
             <Input
               value={newEnvironmentValue.value}
               onChange={(e) => setNewEnvironmentValue({ ...newEnvironmentValue, value: e.target.value })}
-              placeholder="Enter value"
+              placeholder="Enter initial value"
             />
           </Form.Item>
           <Form.Item label="Type">

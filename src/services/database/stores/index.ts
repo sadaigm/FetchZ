@@ -36,3 +36,12 @@ export {
   deleteEnvironmentValue,
   updateEnvironment
 } from './environments';
+
+// Re-export all configuration operations
+export {
+  getConfiguration,
+  saveConfiguration,
+  updateActiveEnvironment,
+  removeActiveEnvironment,
+  toggleActiveEnvironment
+} from './configuration';

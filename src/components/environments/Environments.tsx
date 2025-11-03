@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, List, Modal, Form, Input, Typography, Popconfirm, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { Button, List, Modal, Form, Input, Typography, Popconfirm, message, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EnvironmentOutlined, CheckSquareFilled, CheckSquareOutlined, CheckOutlined } from '@ant-design/icons';
 import { useEnvironmentContext } from '../../context/EnvironmentProvider';
 import { useRequestContext } from '../../context/RequestProvider';
 import { prepareEmptyEnvironment } from '../../utils/environment-utils';
@@ -13,7 +13,9 @@ const Environments: React.FC = () => {
     environments,
     addNewEnvironment,
     updateEnvironmentName,
-    removeEnvironment
+    removeEnvironment,
+    activeEnvironment,
+    toggleEnvironmentActive
   } = useEnvironmentContext();
 
   const { addEnvironment } = useRequestContext();
@@ -101,6 +103,21 @@ const Environments: React.FC = () => {
             }}
             onClick={() => handleSelectEnvironment(environment)}
             actions={[
+              <Tooltip
+                key="setActive"
+                title={activeEnvironment?.id === environment.id ? "Active" : "Set Active"}
+              >
+                <Button
+                  type={activeEnvironment?.id === environment.id ? "primary" : "default"}
+                  size="small"
+                  icon={activeEnvironment?.id === environment.id ? <CheckOutlined /> : <CheckOutlined />}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const isActive = await toggleEnvironmentActive(environment);
+                    message.success(isActive ? `Environment "${environment.name}" set as active` : `Environment "${environment.name}" deactivated`);
+                  }}
+                />
+              </Tooltip>,
               <Button
                 key="edit"
                 type="text"

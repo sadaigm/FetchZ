@@ -19,7 +19,7 @@ export const addEnvironment = async (nameOrEnvironment: string | Environment): P
   
   if (typeof nameOrEnvironment === 'string') {
     // Just add an environment with name
-    const id = await db.add(STORE_NAMES.ENVIRONMENTS, { 
+    const id = await db.add(STORE_NAMES.ENVIRONMENTS, {
       id: generateId(),
       name: nameOrEnvironment,
       values: []
@@ -27,7 +27,17 @@ export const addEnvironment = async (nameOrEnvironment: string | Environment): P
     return id;
   } else {
     // Add a full environment with all its values
-    const id = await db.add(STORE_NAMES.ENVIRONMENTS, nameOrEnvironment);
+    // Strip out any currentValue before saving to database
+    const cleanEnvironment: Environment = {
+      ...nameOrEnvironment,
+      values: nameOrEnvironment.values.map(({ key, value, type, enabled }) => ({
+        key,
+        value,
+        type,
+        enabled
+      }))
+    };
+    const id = await db.add(STORE_NAMES.ENVIRONMENTS, cleanEnvironment);
     return id;
   }
 };
@@ -121,5 +131,17 @@ export const deleteEnvironmentValue = async (environmentId: string, key: string)
 
 export const updateEnvironment = async (environment: Environment): Promise<void> => {
   const db = await getDB();
-  await db.put(STORE_NAMES.ENVIRONMENTS, environment);
+  
+  // Strip out any currentValue before saving to database
+  const cleanEnvironment: Environment = {
+    ...environment,
+    values: environment.values.map(({ key, value, type, enabled }) => ({
+      key,
+      value,
+      type,
+      enabled
+    }))
+  };
+  
+  await db.put(STORE_NAMES.ENVIRONMENTS, cleanEnvironment);
 };
