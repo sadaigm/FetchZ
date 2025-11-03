@@ -4,6 +4,7 @@ import RequestForm from './RequestForm';
 import ResponsePanel from './ResponsePanel';
 import { sendRequest } from '../apiClient';
 import { useRequestHistoryContext } from '../context/RequestHistoryProvider';
+import { useCollectionContext } from '../context/CollectionProvider';
 import { v4 as uuidv4 } from 'uuid';
 import type { WebRsRequest } from '../types/request.types';
 
@@ -17,7 +18,9 @@ interface NetworkPanelProps {
 
 const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTabs, collectionId }) => {
   const [response, setResponse] = useState<any>(null);
+  const [currentRequest, setCurrentRequest] = useState<WebRsRequest>(request);
   const { addRequestHistory } = useRequestHistoryContext();
+  const { refreshCollections } = useCollectionContext();
 
   const handleSendRequest = async (
     method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -44,6 +47,7 @@ const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTa
           body,
           headers: formatHeaders,
           queryParams: formatQueryParams,
+          savedResponses: [], // Initialize the new savedResponses field
         },
         response: res,
         timestamp: new Date().toISOString(),
@@ -67,6 +71,7 @@ const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTa
           body,
           headers: formatHeaders,
           queryParams: formatQueryParams,
+          savedResponses: [], // Initialize the new savedResponses field
         },
         response: { error: error.message },
         timestamp: new Date().toISOString(),
@@ -88,7 +93,12 @@ const NetworkPanel: React.FC<NetworkPanelProps> = ({ request, index, tabs, setTa
         />
       </Col>
       <Col style={{ flex: '1 1 auto', overflowY: 'auto', marginTop: '2px' }}>
-        <ResponsePanel response={response} />
+        <ResponsePanel
+          response={response}
+          requestId={currentRequest.id}
+          collectionId={collectionId}
+          savedResponses={currentRequest.savedResponses}
+        />
       </Col>
     </Row>
   );

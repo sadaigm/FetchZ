@@ -7,6 +7,7 @@ export interface OpenedWindowInstance {
   type: "WebRsRequest" | "Environment";
   data: WebRsRequest | Environment;
   id: string; // for removal & adding
+  collectionId?: string;
 }
 
 interface RequestContextProps {
@@ -36,8 +37,11 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newWindow: OpenedWindowInstance = {
           type: "WebRsRequest",
           data: request,
-          id: request.id
+          id: request.id          
         };
+        if(collectionId){
+          newWindow.collectionId = collectionId;
+        }
         return [...prevRequests, newWindow];
       }
       return prevRequests;

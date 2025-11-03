@@ -240,7 +240,8 @@ function convertPostmanRequest(postmanRequest: PostmanRequest): WebRsRequest {
     method: (postmanRequest.method === 'PATCH' || postmanRequest.method === 'HEAD' || postmanRequest.method === 'OPTIONS') ? 'GET' : (postmanRequest.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'DELETE',
     headers: convertHeaders(postmanRequest.header),
     queryParams,
-    body: convertBody(postmanRequest.body)
+    body: convertBody(postmanRequest.body),
+    savedResponses: [] // Initialize the new savedResponses field
   };
 }
 

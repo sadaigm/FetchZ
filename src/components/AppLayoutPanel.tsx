@@ -56,6 +56,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
       queryParams: [],
       body: "",
       description: "", // Initialize the new description field
+      savedResponses: [], // Initialize the new savedResponses field
     };
     const newWindow: OpenedWindowInstance = {
       type: "WebRsRequest",
@@ -91,6 +92,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
         const isRequest = tab.type === "WebRsRequest";
         const isEnvironment = tab.type === "Environment";
         const tabData = tab.data;
+        const collectionId = tab.collectionId;
         
         return (
           <TabPane
@@ -102,6 +104,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
           >
             {isRequest && (
               <NetworkPanel
+                collectionId={collectionId}
                 request={tabData as WebRsRequest}
                 index={index}
                 tabs={tabs.filter(t => t.type === "WebRsRequest").map(t => t.data as WebRsRequest)}
@@ -123,7 +126,6 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
                   });
                   setTabs(updatedWindows);
                 }}
-                collectionId={requestCollections[tab.id]?.id || undefined}
               />
             )}
             {isEnvironment && (

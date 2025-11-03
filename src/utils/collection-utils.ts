@@ -65,5 +65,6 @@ export const prepareEmptyRequest = (collectionId: string): WebRsRequest => {
     headers: [],
     queryParams: [],
     body: '',
+    savedResponses: [], // Initialize the new savedResponses field
   };
 };

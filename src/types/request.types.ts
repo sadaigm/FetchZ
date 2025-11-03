@@ -1,3 +1,10 @@
+export interface SavedResponse {
+  id: string;
+  name: string;
+  content: string; // Stringified JSON or error message
+  timestamp: string; // ISO string for when the response was saved
+}
+
 export interface WebRsRequest {
   id: string;
   name: string; // Optional name for the request
@@ -7,6 +14,7 @@ export interface WebRsRequest {
   queryParams: { key: string; value: string }[];
   body: string;
   description?: string; // Optional description for the request
+  savedResponses: SavedResponse[]; // Array to store saved responses
 }
 
 export interface Collection {

@@ -1,13 +1,30 @@
-import type { Collection, WebRsRequest, CollectionFolder } from '../../../types/request.types';
+import type { Collection, WebRsRequest, CollectionFolder, SavedResponse } from '../../../types/request.types';
 import { STORE_NAMES } from '../types';
 import { getDB } from '../index';
 
 const mapToCollectionType = (rawCollection: any): Collection => {
+  // Ensure all requests have the savedResponses field
+  const ensureSavedResponses = (requests: any[]): WebRsRequest[] => {
+    return (requests || []).map((req: any) => ({
+      ...req,
+      savedResponses: req.savedResponses || []
+    }));
+  };
+
+  // Process folders recursively
+  const processFolders = (folders: any[]): CollectionFolder[] => {
+    return (folders || []).map((folder: any) => ({
+      ...folder,
+      requests: ensureSavedResponses(folder.requests),
+      folders: folder.folders ? processFolders(folder.folders) : undefined
+    }));
+  };
+
   return {
     id: rawCollection.id,
     name: rawCollection.name,
-    requests: rawCollection.requests || [],
-    folders: rawCollection.folders || []
+    requests: ensureSavedResponses(rawCollection.requests),
+    folders: processFolders(rawCollection.folders)
   };
 };
 
@@ -267,3 +284,143 @@ const findAndUpdateFolder = (
   }
   return false; // Not found
 }
+
+export const saveResponseToRequest = async (
+  collectionId: string,
+  requestId: string,
+  responseName: string,
+  responseContent: string
+): Promise<void> => {
+  const db = await getDB();
+  const collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection) {
+    // Check if request is in the main collection
+    const requestIndex = collection.requests.findIndex((req: WebRsRequest) => req.id === requestId);
+    if (requestIndex !== -1) {
+      const request = collection.requests[requestIndex];
+      const newSavedResponse = {
+        id: generateId(),
+        name: responseName,
+        content: responseContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (!request.savedResponses) {
+        request.savedResponses = [];
+      }
+      request.savedResponses.push(newSavedResponse);
+      
+      await db.put(STORE_NAMES.COLLECTIONS, collection);
+      return;
+    }
+    
+    // If not in main collection, check in folders
+    if (collection.folders) {
+      const found = saveResponseToFolder(collection.folders, requestId, responseName, responseContent);
+      if (found) {
+        await db.put(STORE_NAMES.COLLECTIONS, collection);
+        return;
+      }
+    }
+    
+    throw new Error('Request not found in collection or folders');
+  } else {
+    throw new Error('Collection not found');
+  }
+};
+
+const saveResponseToFolder = (
+  folders: CollectionFolder[],
+  requestId: string,
+  responseName: string,
+  responseContent: string
+): boolean => {
+  for (const folder of folders) {
+    const requestIndex = folder.requests.findIndex((req: WebRsRequest) => req.id === requestId);
+    if (requestIndex !== -1) {
+      const request = folder.requests[requestIndex];
+      const newSavedResponse = {
+        id: generateId(),
+        name: responseName,
+        content: responseContent,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (!request.savedResponses) {
+        request.savedResponses = [];
+      }
+      request.savedResponses.push(newSavedResponse);
+      return true;
+    }
+    
+    // Recursively search in nested folders
+    if (folder.folders && folder.folders.length > 0) {
+      const found = saveResponseToFolder(folder.folders, requestId, responseName, responseContent);
+      if (found) return true;
+    }
+  }
+  return false;
+};
+
+export const deleteSavedResponse = async (
+  collectionId: string,
+  requestId: string,
+  responseId: string
+): Promise<void> => {
+  const db = await getDB();
+  const collection = await db.get(STORE_NAMES.COLLECTIONS, collectionId);
+  if (collection) {
+    // Check if request is in the main collection
+    const requestIndex = collection.requests.findIndex((req: WebRsRequest) => req.id === requestId);
+    if (requestIndex !== -1) {
+      const request = collection.requests[requestIndex];
+      if (request.savedResponses) {
+        request.savedResponses = request.savedResponses.filter(
+          (response: SavedResponse) => response.id !== responseId
+        );
+      }
+      
+      await db.put(STORE_NAMES.COLLECTIONS, collection);
+      return;
+    }
+    
+    // If not in main collection, check in folders
+    if (collection.folders) {
+      const found = deleteSavedResponseFromFolder(collection.folders, requestId, responseId);
+      if (found) {
+        await db.put(STORE_NAMES.COLLECTIONS, collection);
+        return;
+      }
+    }
+    
+    throw new Error('Request not found in collection or folders');
+  } else {
+    throw new Error('Collection not found');
+  }
+};
+
+const deleteSavedResponseFromFolder = (
+  folders: CollectionFolder[],
+  requestId: string,
+  responseId: string
+): boolean => {
+  for (const folder of folders) {
+    const requestIndex = folder.requests.findIndex((req: WebRsRequest) => req.id === requestId);
+    if (requestIndex !== -1) {
+      const request = folder.requests[requestIndex];
+      if (request.savedResponses) {
+        request.savedResponses = request.savedResponses.filter(
+          (response: SavedResponse) => response.id !== responseId
+        );
+      }
+      return true;
+    }
+    
+    // Recursively search in nested folders
+    if (folder.folders && folder.folders.length > 0) {
+      const found = deleteSavedResponseFromFolder(folder.folders, requestId, responseId);
+      if (found) return true;
+    }
+  }
+  return false;
+};

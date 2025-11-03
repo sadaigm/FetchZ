@@ -24,7 +24,7 @@ const RequestItem: React.FC<RequestItemProps> = ({
     if (isAlreadyOpened) {
       setSelectedRequestId && setSelectedRequestId(request.id);
     } else {
-      addRequest(request);
+      addRequest(request, collectionId);
       setSelectedRequestId && setSelectedRequestId(request.id);
     }
   };
