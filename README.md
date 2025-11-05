@@ -82,4 +82,11 @@ Contributions are welcome! Feel free to open issues or submit pull requests to i
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License with Commercial Use Restrictions. See the [LICENSE](./LICENSE) file for details.
+
+### Commercial Use
+
+While FetchZ is open source and free to use for personal and enterprise purposes, the following restrictions apply:
+
+- **Free Use**: Anyone can use, modify, and distribute FetchZ for personal, educational, and internal enterprise development purposes
+- **Commercial Redistribution**: You may not sell FetchZ or offer it as a commercial service without explicit permission from the copyright holder
