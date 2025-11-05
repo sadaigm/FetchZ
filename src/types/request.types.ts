@@ -15,6 +15,7 @@ export interface WebRsRequest {
   body: string;
   description?: string; // Optional description for the request
   savedResponses: SavedResponse[]; // Array to store saved responses
+  testScript?: string; // JavaScript code to execute after response
 }
 
 export interface Collection {

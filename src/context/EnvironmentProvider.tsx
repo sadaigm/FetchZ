@@ -17,6 +17,7 @@ import type { Environment, EnvironmentValue, EnvironmentValueWithCurrent } from 
 interface EnvironmentContextProps {
   environments: Environment[];
   activeEnvironment: Environment | null;
+  activeEnvironmentWithCurrentValues: Environment | null;
   refreshEnvironments: () => Promise<void>;
   toggleEnvironmentActive: (environment: Environment) => Promise<boolean>;
   addNewEnvironment: (name: string) => Promise<void>;
@@ -61,6 +62,30 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [activeEnvironment, setActiveEnvironmentState] = useState<Environment | null>(null);
   const [currentValues, setCurrentValues] = useState<Map<string, Map<string, string>>>(loadCurrentValuesFromStorage()); // environmentId -> key -> currentValue
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Computed state that combines active environment with current values
+  const activeEnvironmentWithCurrentValues = React.useMemo(() => {
+    if (!activeEnvironment) return null;
+    
+    const envCurrentValues = currentValues.get(activeEnvironment.id);
+    if (!envCurrentValues || envCurrentValues.size === 0) {
+      return activeEnvironment;
+    }
+    
+    // Create a new environment object with current values merged in
+    const updatedValues = activeEnvironment.values.map(envValue => {
+      const currentValue = envCurrentValues.get(envValue.key);
+      if (currentValue !== undefined) {
+        return { ...envValue, currentValue };
+      }
+      return envValue;
+    });
+    
+    return {
+      ...activeEnvironment,
+      values: updatedValues
+    };
+  }, [activeEnvironment, currentValues]);
   
   // Save current values to localStorage whenever they change
   React.useEffect(() => {
@@ -249,6 +274,7 @@ export const EnvironmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     <EnvironmentContext.Provider value={{
       environments,
       activeEnvironment,
+      activeEnvironmentWithCurrentValues,
       refreshEnvironments: fetchEnvironments,
       toggleEnvironmentActive,
       addNewEnvironment,

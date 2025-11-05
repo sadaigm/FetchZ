@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from 'axios';
+import { updateProtocol } from './utils/environment-variable-utils';
 
 const apiClient = axios.create({
   baseURL: '', // Set a default base URL if needed
@@ -37,9 +38,12 @@ export const sendRequest = async (
   headers?: Record<string, string>,
   params?: Record<string, string>
 ) => {
+  // Update URL to ensure it has a protocol
+  const updatedUrl = updateProtocol(url);
+  
   const config: AxiosRequestConfig = {
     method,
-    url,
+    url: updatedUrl,
     data,
     headers,
     params,
@@ -47,7 +51,7 @@ export const sendRequest = async (
 
   try {
     const response = await apiClient(config);
-    return response.data;
+    return response; // Return the full axios response, not just data
   } catch (error) {
     console.error('Error sending request:', error);
     throw error;

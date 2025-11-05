@@ -57,6 +57,7 @@ const AppLayoutPanel: React.FC<AppLayoutPanelProps> = ({}) => {
       body: "",
       description: "", // Initialize the new description field
       savedResponses: [], // Initialize the new savedResponses field
+      testScript: "", // Initialize the new testScript field
     };
     const newWindow: OpenedWindowInstance = {
       type: "WebRsRequest",

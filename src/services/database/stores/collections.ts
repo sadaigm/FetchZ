@@ -3,11 +3,12 @@ import { STORE_NAMES } from '../types';
 import { getDB } from '../index';
 
 const mapToCollectionType = (rawCollection: any): Collection => {
-  // Ensure all requests have the savedResponses field
+  // Ensure all requests have the savedResponses and testScript fields
   const ensureSavedResponses = (requests: any[]): WebRsRequest[] => {
     return (requests || []).map((req: any) => ({
       ...req,
-      savedResponses: req.savedResponses || []
+      savedResponses: req.savedResponses || [],
+      testScript: req.testScript || ""
     }));
   };
 

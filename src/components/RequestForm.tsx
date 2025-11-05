@@ -250,6 +250,20 @@ const RequestForm: React.FC<RequestFormProps> = ({ request, index, tabs, setTabs
               placeholder="Enter request body (JSON format)"
             />
           </TabPane>
+          <TabPane tab="Tests" key="4">
+            <TextArea
+              rows={8}
+              value={request.testScript || ''}
+              onChange={(e) => {
+                const requestIndex = getRequestIndex();
+                const newTabs = [...tabs];
+                newTabs[requestIndex].testScript = e.target.value;
+                updateTabsAndFocus(newTabs, request.id.toString())
+              }}
+              placeholder="Enter test script (JavaScript)"
+              style={{ fontFamily: 'monospace' }}
+            />
+          </TabPane>
         </Tabs>
       </Form.Item>
 
