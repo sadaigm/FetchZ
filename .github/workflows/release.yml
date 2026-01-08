@@ -1,0 +1,148 @@
+name: Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup Python for Windows (node-gyp)
+      if: runner.os == 'Windows'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+        
+    - name: Build Electron app (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        npm run build
+        ELECTRON_BUILD=true npm run dist
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build Electron app (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        npm run build
+        $env:ELECTRON_BUILD="true"; npm run dist
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+        CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+        
+    - name: Build Electron app (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        npm run build
+        ELECTRON_BUILD=true npm run dist
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+        CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ runner.os }}-build
+        path: dist-electron/
+        
+  create-release:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        
+    - name: Display structure of downloaded files
+      run: |
+        find artifacts -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | sort
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/Linux-build/*.AppImage
+          artifacts/Linux-build/*.deb
+          artifacts/Linux-build/*.rpm
+          artifacts/Windows-build/*.exe
+          artifacts/Windows-build/*.zip
+          artifacts/macOS-build/*.dmg
+          artifacts/macOS-build/*.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        name: Release ${{ github.ref_name }}
+        body: |
+          ## FetchZ ${{ github.ref_name }}
+          
+          ### Downloads
+          
+          **Windows:**
+          - `FetchZ-Setup-x.x.x.exe` - Installer version
+          - `FetchZ-x.x.x-win.zip` - Portable version
+          
+          **macOS:**
+          - `FetchZ-x.x.x.dmg` - Disk image installer
+          - `FetchZ-x.x.x-mac.zip` - ZIP version
+          
+          **Linux:**
+          - `FetchZ-x.x.x.AppImage` - Universal AppImage
+          - `fetchz_x.x.x_amd64.deb` - Debian/Ubuntu package
+          - `fetchz-x.x.x.x86_64.rpm` - RedHat/Fedora package
+          
+          ### Installation
+          
+          **Windows:**
+          1. Download the `.exe` installer
+          2. Run the installer and follow the setup wizard
+          
+          **macOS:**
+          1. Download the `.dmg` file
+          2. Open the disk image
+          3. Drag FetchZ to your Applications folder
+          
+          **Linux:**
+          1. Download the appropriate package for your distribution
+          2. Install using your package manager:
+             - For Debian/Ubuntu: `sudo dpkg -i fetchz_x.x.x_amd64.deb`
+             - For RedHat/Fedora: `sudo rpm -i fetchz-x.x.x.x86_64.rpm`
+             - Or use the AppImage: `chmod +x FetchZ-x.x.x.AppImage && ./FetchZ-x.x.x.AppImage`
+          
+          ---
+          
+          Full release notes are available in the [GitHub Releases](https://github.com/YOUR_GITHUB_USERNAME/FetchZ/releases) page.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
